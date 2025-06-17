@@ -193,7 +193,7 @@ def upload_file():
         flash('No file selected', 'error')
         return redirect(url_for('index'))
     
-    if not allowed_file(file.filename):
+    if not file.filename or not allowed_file(file.filename):
         flash('Only PDF files are allowed', 'error')
         return redirect(url_for('index'))
     
