@@ -12,15 +12,16 @@ document.addEventListener('DOMContentLoaded', function() {
         // Validate file selection
         if (!fileInput.files.length) {
             e.preventDefault();
-            showAlert('Please select a PDF file to upload', 'error');
+            showAlert('Please select a PDF or image file to upload', 'error');
             return;
         }
 
         // Validate file type
         const file = fileInput.files[0];
-        if (!file.name.toLowerCase().endsWith('.pdf')) {
+        const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png'];
+        if (!allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext))) {
             e.preventDefault();
-            showAlert('Please select a valid PDF file', 'error');
+            showAlert('Please select a valid PDF or image file', 'error');
             return;
         }
 

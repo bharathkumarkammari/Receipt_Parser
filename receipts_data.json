@@ -2,89 +2,241 @@
   {
     "id": 1,
     "filename": "Costco Receipt.pdf",
-    "upload_date": "2025-06-17T02:47:34.468970",
+    "upload_date": "2025-06-17T01:10:46.644997",
     "items": [
+      {
+        "item_code": "1133164",
+        "item_name": "SALAD",
+        "price": 8.99,
+        "discount": 0.0,
+        "final_price": 8.99
+      },
       {
         "item_code": "427381",
         "item_name": "KS ORG EGGS",
         "price": 25.47,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 25.47
+      },
+      {
+        "item_code": "580664",
+        "item_name": "NM PRNTL 150",
+        "price": 23.99,
+        "discount": 0.0,
+        "final_price": 23.99
+      },
+      {
+        "item_code": "47825",
+        "item_name": "GREEN",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
       },
       {
         "item_code": "18600",
         "item_name": "MANDARINS",
         "price": 6.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 6.99
       },
       {
         "item_code": "480084",
         "item_name": "GHEE BUTTER",
         "price": 21.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 21.99
       },
       {
         "item_code": "96716",
         "item_name": "ORG SPINACH",
         "price": 4.29,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 4.29
       },
       {
         "item_code": "1462714",
         "item_name": "KS ORG A2 PR",
         "price": 13.59,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 13.59
+      },
+      {
+        "item_code": "1352",
+        "item_name": "OG",
+        "price": 5.89,
+        "discount": 0.0,
+        "final_price": 5.89
+      },
+      {
+        "item_code": "7812",
+        "item_name": "CARROT6LB YELLOW",
+        "price": 3.79,
+        "discount": 0.0,
+        "final_price": 3.79
+      },
+      {
+        "item_code": "214449",
+        "item_name": "ONION ORG",
+        "price": 7.99,
+        "discount": 0.0,
+        "final_price": 7.99
       },
       {
         "item_code": "1792879",
         "item_name": "POM JUICE",
         "price": 19.98,
-        "discount": 0.0
+        "discount": 6.0,
+        "final_price": 13.98
       },
       {
         "item_code": "48757",
         "item_name": "SPRING MIX",
         "price": 4.29,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 4.29
+      },
+      {
+        "item_code": "1462402",
+        "item_name": "HBO",
+        "price": 7.59,
+        "discount": 0.0,
+        "final_price": 7.59
       },
       {
         "item_code": "39036",
         "item_name": "ROMAINE",
         "price": 4.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 4.99
       },
       {
         "item_code": "720650",
         "item_name": "MINI CUKES",
         "price": 6.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 6.99
       },
       {
         "item_code": "1036732",
         "item_name": "ORG CELERY",
         "price": 5.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 5.99
       },
       {
         "item_code": "5938",
         "item_name": "POTATOES",
         "price": 5.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 5.99
       },
       {
         "item_code": "19813",
         "item_name": "MUSHROOMS",
         "price": 3.59,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 3.59
+      },
+      {
+        "item_code": "6659",
+        "item_name": "https://www.costco.com/myaccount/ Page 1 of 2 4/6/25, 7:47 PM 4LB",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
       },
       {
         "item_code": "1219113",
         "item_name": "APL CDR VNGR",
         "price": 9.99,
-        "discount": 0.0
+        "discount": 0.0,
+        "final_price": 9.99
       }
     ],
     "subtotal": 203.36,
     "tax": 0.0,
-    "total": 203.36
+    "total": 203.36,
+    "calculated_subtotal": 203.35999999999999,
+    "calculated_total": 203.35999999999999,
+    "total_discounts": 6.0,
+    "subtotal_valid": true,
+    "total_valid": true
+  },
+  {
+    "id": 2,
+    "filename": "Costco Receipt 01-13-2025.pdf",
+    "upload_date": "2025-06-17T01:10:58.194974",
+    "items": [
+      {
+        "item_code": "1491866",
+        "item_name": "PUMPKIN SEED",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "720650",
+        "item_name": "MINI CUKES",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
+      },
+      {
+        "item_code": "1462714",
+        "item_name": "KS ORG A2 PR",
+        "price": 13.59,
+        "discount": 0.0,
+        "final_price": 13.59
+      },
+      {
+        "item_code": "96716",
+        "item_name": "ORG SPINACH",
+        "price": 4.29,
+        "discount": 0.0,
+        "final_price": 4.29
+      },
+      {
+        "item_code": "39036",
+        "item_name": "ROMAINE",
+        "price": 4.99,
+        "discount": 0.0,
+        "final_price": 4.99
+      },
+      {
+        "item_code": "27003",
+        "item_name": "STRAWBERRIES",
+        "price": 7.99,
+        "discount": 0.0,
+        "final_price": 7.99
+      },
+      {
+        "item_code": "48757",
+        "item_name": "SPRING MIX",
+        "price": 4.29,
+        "discount": 0.0,
+        "final_price": 4.29
+      },
+      {
+        "item_code": "18600",
+        "item_name": "MANDARINS",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
+      },
+      {
+        "item_code": "427381",
+        "item_name": "KS ORG EGGS",
+        "price": 7.59,
+        "discount": 0.0,
+        "final_price": 7.59
+      }
+    ],
+    "subtotal": 66.71,
+    "tax": 0.0,
+    "total": 66.71,
+    "calculated_subtotal": 66.71000000000001,
+    "calculated_total": 66.71000000000001,
+    "total_discounts": 0.0,
+    "subtotal_valid": true,
+    "total_valid": true
   }
 ]

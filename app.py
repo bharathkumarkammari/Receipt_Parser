@@ -6,6 +6,10 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import pdfplumber
 from werkzeug.utils import secure_filename
+import gspread
+from google.oauth2.service_account import Credentials
+from PIL import Image
+import pytesseract
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,12 +19,15 @@ app.secret_key = os.environ.get("SESSION_SECRET", "fallback_secret_key_for_devel
 
 # Configuration
 UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'pdf'}
+ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 DATA_FILE = 'receipts_data.json'
 
 # Create upload directory if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+# Set tesseract_cmd if needed (update the path if your tesseract is elsewhere)
+pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
 
 def allowed_file(filename):
     """Check if file has allowed extension"""
@@ -61,6 +68,57 @@ def extract_text_from_pdf(pdf_path):
         logging.error(f"Error extracting text from PDF: {e}")
         return None
 
+def extract_text_from_image(image_path):
+    """Extract text from an image using pytesseract."""
+    try:
+        img = Image.open(image_path)
+        img = img.convert('RGB')  # Convert to standard RGB
+        text = pytesseract.image_to_string(img)
+        print(f"OCR TEXT: {text}")  # Debug print
+        return text
+    except Exception as e:
+        logging.error(f"Error extracting text from image: {e}")
+        return None
+
+def combine_multiline_items(lines):
+    """Combine multi-line items into a single line using item code as the base, skipping metadata and member numbers."""
+    combined = []
+    buffer = ''
+    # Item code pattern: E or F (optional) followed by digits
+    item_code_pattern = re.compile(r'^(E|F)?\s*\d+')
+    # Metadata patterns (member, subtotal, tax, total, etc.)
+    metadata_patterns = [
+        re.compile(r'^Member', re.IGNORECASE),
+        re.compile(r'^KING OF PRUSSIA', re.IGNORECASE),
+        re.compile(r'^\d{10,}$'),  # long numbers (member numbers, etc.)
+        re.compile(r'SUBTOTAL', re.IGNORECASE),
+        re.compile(r'TAX', re.IGNORECASE),
+        re.compile(r'TOTAL', re.IGNORECASE),
+        re.compile(r'AMOUNT', re.IGNORECASE),
+        re.compile(r'CHANGE', re.IGNORECASE),
+        re.compile(r'ITEMS SOLD', re.IGNORECASE),
+        re.compile(r'INSTANT SAVINGS', re.IGNORECASE),
+        re.compile(r'^https?://', re.IGNORECASE),
+    ]
+    for line in lines:
+        # If this is a new item line
+        if item_code_pattern.match(line):
+            if buffer:
+                combined.append(buffer.strip())
+            buffer = line
+        # If this is a metadata or member line, skip it
+        elif any(pat.search(line) for pat in metadata_patterns):
+            continue
+        # If this is a line of just digits (likely metadata), skip it
+        elif line.isdigit():
+            continue
+        # Otherwise, append to the current item buffer
+        else:
+            buffer += ' ' + line
+    if buffer:
+        combined.append(buffer.strip())
+    return combined
+
 def parse_costco_receipt(text):
     """Parse Costco receipt text to extract items, prices, and totals"""
     try:
@@ -70,19 +128,16 @@ def parse_costco_receipt(text):
         tax = None
         total = None
         
-        # Debug: Log the extracted text to understand the format
-        logging.debug(f"Receipt text lines: {lines}")
-        
-        # Regex patterns for Costco receipts - updated for the actual format
+        # Regex patterns for Costco receipts - updated for all item formats
         subtotal_pattern = r'SUBTOTAL\s+(\d+\.\d{2})'
         tax_pattern = r'TAX\s+(\d+\.\d{2})'
         total_pattern = r'\*+\s*TOTAL\s+(\d+\.\d{2})'
         
-        # Pattern for item lines: E followed by item code, name, price, and tax indicator
-        item_pattern = r'E\s+(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+[NY]'
+        # Pattern for item lines: E or F or just code, name, price, and tax indicator
+        item_pattern = r'(?:[EF]\s+)?(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+[NY]'
         
         # Pattern for partial item lines (item code only with price on next line)
-        partial_item_pattern = r'E\s+(\d+)\s+(\d+\.\d{2})\s+[NY]'
+        partial_item_pattern = r'(?:[EF]\s+)?(\d+)\s+(\d+\.\d{2})\s+[NY]'
         
         # Pattern for discount lines: item code / original code followed by discount amount
         discount_pattern = r'(\d+)\s*/\s*(\d+)\s+(\d+\.\d{2})-'
@@ -116,7 +171,7 @@ def parse_costco_receipt(text):
                 i += 1
                 continue
             
-            # Check for discount lines first
+            # Check for discount lines (e.g., 345771 /1792879 6.00-)
             discount_match = re.match(discount_pattern, line)
             if discount_match:
                 discount_code = discount_match.group(2)  # The original item code
@@ -125,19 +180,16 @@ def parse_costco_receipt(text):
                 i += 1
                 continue
             
-            # Check for food items (starting with E) - complete line with name and price
+            # Check for food items (starting with E or F) - complete line with name and price
             item_match = re.match(item_pattern, line)
             if item_match:
                 item_code = item_match.group(1)
                 item_name = item_match.group(2).strip()
                 price = float(item_match.group(3))
-                discount = discounts.get(item_code, 0.0)
-                
                 items.append({
                     'item_code': item_code,
                     'item_name': item_name,
-                    'price': price,
-                    'discount': discount
+                    'price': price
                 })
                 i += 1
                 continue
@@ -147,15 +199,13 @@ def parse_costco_receipt(text):
             if partial_match:
                 item_code = partial_match.group(1)
                 price = float(partial_match.group(2))
-                discount = discounts.get(item_code, 0.0)
-                
                 # Look backwards for the item name
                 item_name_parts = []
                 j = i - 1
                 while j >= 0 and j > i - 5:  # Look back up to 5 lines
                     prev_line = lines[j]
                     # Stop if we hit another item line or receipt metadata
-                    if (re.match(r'E\s+\d+', prev_line) or 
+                    if (re.match(r'[EF]\s+\d+', prev_line) or 
                         re.match(r'Member|KING OF PRUSSIA|^\d{20}', prev_line) or
                         'SUBTOTAL' in prev_line or 'TAX' in prev_line or 'TOTAL' in prev_line):
                         break
@@ -163,49 +213,46 @@ def parse_costco_receipt(text):
                     if len(prev_line.split()) >= 1 and not prev_line.isdigit():
                         item_name_parts.insert(0, prev_line)
                     j -= 1
-                
                 item_name = ' '.join(item_name_parts) if item_name_parts else f"ITEM {item_code}"
-                
                 items.append({
                     'item_code': item_code,
                     'item_name': item_name.strip(),
-                    'price': price,
-                    'discount': discount
+                    'price': price
                 })
                 i += 1
                 continue
             
-            # Check for taxable items (no E prefix)
+            # Check for taxable items (no E or F prefix)
             taxable_match = re.match(taxable_item_pattern, line)
             if taxable_match:
                 item_code = taxable_match.group(1)
                 item_name = taxable_match.group(2).strip()
                 price = float(taxable_match.group(3))
-                discount = discounts.get(item_code, 0.0)
-                
                 items.append({
                     'item_code': item_code,
                     'item_name': item_name,
-                    'price': price,
-                    'discount': discount
+                    'price': price
                 })
                 i += 1
                 continue
             
             i += 1
         
+        # Apply discounts to items after all items are parsed
+        for item in items:
+            code = item['item_code']
+            discount = discounts.get(code, 0.0)
+            item['discount'] = discount
+            item['final_price'] = item['price'] - discount
+        
         # Calculate totals for validation
-        calculated_subtotal = sum(item['price'] - item['discount'] for item in items)
+        calculated_subtotal = sum(item['final_price'] for item in items)
         total_discounts = sum(item['discount'] for item in items)
+        calculated_total = calculated_subtotal + (tax or 0)
         
         # Validation flags
         subtotal_valid = abs(calculated_subtotal - (subtotal or 0)) < 0.01 if subtotal else None
-        total_valid = abs(calculated_subtotal + (tax or 0) - (total or 0)) < 0.01 if total else None
-        
-        logging.debug(f"Parsed items: {items}")
-        logging.debug(f"Subtotal: {subtotal} (calculated: {calculated_subtotal:.2f}, valid: {subtotal_valid})")
-        logging.debug(f"Tax: {tax}, Total: {total} (valid: {total_valid})")
-        logging.debug(f"Total discounts: {total_discounts:.2f}")
+        total_valid = abs(calculated_total - (total or 0)) < 0.01 if total else None
         
         return {
             'items': items,
@@ -213,6 +260,7 @@ def parse_costco_receipt(text):
             'tax': tax,
             'total': total,
             'calculated_subtotal': calculated_subtotal,
+            'calculated_total': calculated_total,
             'total_discounts': total_discounts,
             'subtotal_valid': subtotal_valid,
             'total_valid': total_valid
@@ -229,7 +277,7 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    """Handle PDF upload and processing"""
+    """Handle PDF or image upload and processing"""
     if 'file' not in request.files:
         flash('No file selected', 'error')
         return redirect(url_for('index'))
@@ -241,7 +289,7 @@ def upload_file():
         return redirect(url_for('index'))
     
     if not file.filename or not allowed_file(file.filename):
-        flash('Only PDF files are allowed', 'error')
+        flash('Only PDF or image files are allowed', 'error')
         return redirect(url_for('index'))
     
     try:
@@ -252,10 +300,18 @@ def upload_file():
         filepath = os.path.join(UPLOAD_FOLDER, filename)
         file.save(filepath)
         
-        # Extract text from PDF
-        text = extract_text_from_pdf(filepath)
+        # Extract text based on file type
+        ext = filename.rsplit('.', 1)[1].lower()
+        if ext == 'pdf':
+            text = extract_text_from_pdf(filepath)
+        elif ext in {'jpg', 'jpeg', 'png'}:
+            text = extract_text_from_image(filepath)
+        else:
+            flash('Unsupported file type.', 'error')
+            return redirect(url_for('index'))
+        
         if not text:
-            flash('Failed to extract text from PDF', 'error')
+            flash('Failed to extract text from file', 'error')
             return redirect(url_for('index'))
         
         # Parse receipt data
@@ -276,6 +332,7 @@ def upload_file():
             'tax': parsed_data['tax'],
             'total': parsed_data['total'],
             'calculated_subtotal': parsed_data['calculated_subtotal'],
+            'calculated_total': parsed_data['calculated_total'],
             'total_discounts': parsed_data['total_discounts'],
             'subtotal_valid': parsed_data['subtotal_valid'],
             'total_valid': parsed_data['total_valid']
@@ -312,6 +369,39 @@ def clear_data():
         logging.error(f"Error clearing data: {e}")
         flash('Error clearing data', 'error')
     
+    return redirect(url_for('index'))
+
+@app.route('/upload_to_gsheet', methods=['POST'])
+def upload_to_gsheet():
+    """Upload the latest parsed receipt to Google Sheets"""
+    try:
+        receipts_data = load_receipts_data()
+        if not receipts_data:
+            flash('No receipts to upload.', 'error')
+            return redirect(url_for('index'))
+        latest = receipts_data[-1]
+        items = latest.get('items', [])
+        # Google Sheets setup
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_file('service_account.json', scopes=scope)
+        client = gspread.authorize(creds)
+        # Open the sheet (replace with your sheet name)
+        sheet = client.open("Costco_Input").sheet1
+        # Prepare header and rows
+        header = ["ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE"]
+        rows = [
+            [item['item_code'], item['item_name'], item['price'], item.get('discount', ''), item.get('final_price', '')]
+            for item in items
+        ]
+        # Append header only if sheet is empty
+        if len(sheet.get_all_values()) == 0:
+            sheet.append_row(header)
+        for row in rows:
+            sheet.append_row(row)
+        flash('Latest receipt uploaded to Google Sheets!', 'success')
+    except Exception as e:
+        logging.error(f"Error uploading to Google Sheets: {e}")
+        flash('Failed to upload to Google Sheets. Check server logs and credentials.', 'error')
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

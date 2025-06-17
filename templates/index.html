@@ -54,7 +54,7 @@
                                 <div class="col-md-8">
                                     <div class="mb-3">
                                         <label for="file" class="form-label">Select PDF File</label>
-                                        <input type="file" class="form-control" id="file" name="file" accept=".pdf" required>
+                                        <input type="file" class="form-control" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
                                         <div class="form-text">Only PDF files are accepted</div>
                                     </div>
                                 </div>
@@ -96,14 +96,24 @@
                                 <span class="badge bg-secondary ms-2">{{ receipts|length }} receipt{{ 's' if receipts|length != 1 else '' }}</span>
                             {% endif %}
                         </h5>
-                        {% if receipts %}
-                            <form action="{{ url_for('clear_data') }}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear all receipt data?');">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-trash me-1"></i>
-                                    Clear All
-                                </button>
-                            </form>
-                        {% endif %}
+                        <div>
+                            {% if receipts %}
+                                <form action="{{ url_for('upload_to_gsheet') }}" method="post" style="display: inline;">
+                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-upload me-1"></i>
+                                        Upload Latest to Google Sheets
+                                    </button>
+                                </form>
+                            {% endif %}
+                            {% if receipts %}
+                                <form action="{{ url_for('clear_data') }}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear all receipt data?');">
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash me-1"></i>
+                                        Clear All
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
                     </div>
                     <div class="card-body">
                         {% if not receipts %}
