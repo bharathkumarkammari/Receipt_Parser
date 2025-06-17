@@ -1,19 +1,31 @@
 [
   {
     "id": 1,
-    "filename": "Costco Receipt 01-13-2025.pdf",
-    "upload_date": "2025-06-17T02:45:34.789732",
+    "filename": "Costco Receipt.pdf",
+    "upload_date": "2025-06-17T02:47:34.468970",
     "items": [
       {
-        "item_code": "1491866",
-        "item_name": "PUMPKIN SEED",
-        "price": 9.99,
+        "item_code": "427381",
+        "item_name": "KS ORG EGGS",
+        "price": 25.47,
         "discount": 0.0
       },
       {
-        "item_code": "720650",
-        "item_name": "MINI CUKES",
+        "item_code": "18600",
+        "item_name": "MANDARINS",
         "price": 6.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "480084",
+        "item_name": "GHEE BUTTER",
+        "price": 21.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "96716",
+        "item_name": "ORG SPINACH",
+        "price": 4.29,
         "discount": 0.0
       },
       {
@@ -23,8 +35,14 @@
         "discount": 0.0
       },
       {
-        "item_code": "96716",
-        "item_name": "ORG SPINACH",
+        "item_code": "1792879",
+        "item_name": "POM JUICE",
+        "price": 19.98,
+        "discount": 0.0
+      },
+      {
+        "item_code": "48757",
+        "item_name": "SPRING MIX",
         "price": 4.29,
         "discount": 0.0
       },
@@ -35,32 +53,38 @@
         "discount": 0.0
       },
       {
-        "item_code": "27003",
-        "item_name": "STRAWBERRIES",
-        "price": 7.99,
-        "discount": 0.0
-      },
-      {
-        "item_code": "48757",
-        "item_name": "SPRING MIX",
-        "price": 4.29,
-        "discount": 0.0
-      },
-      {
-        "item_code": "18600",
-        "item_name": "MANDARINS",
+        "item_code": "720650",
+        "item_name": "MINI CUKES",
         "price": 6.99,
         "discount": 0.0
       },
       {
-        "item_code": "427381",
-        "item_name": "KS ORG EGGS",
-        "price": 7.59,
+        "item_code": "1036732",
+        "item_name": "ORG CELERY",
+        "price": 5.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "5938",
+        "item_name": "POTATOES",
+        "price": 5.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "19813",
+        "item_name": "MUSHROOMS",
+        "price": 3.59,
+        "discount": 0.0
+      },
+      {
+        "item_code": "1219113",
+        "item_name": "APL CDR VNGR",
+        "price": 9.99,
         "discount": 0.0
       }
     ],
-    "subtotal": 66.71,
+    "subtotal": 203.36,
     "tax": 0.0,
-    "total": 66.71
+    "total": 203.36
   }
 ]

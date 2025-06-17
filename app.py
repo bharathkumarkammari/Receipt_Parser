@@ -79,15 +79,15 @@ def parse_costco_receipt(text):
         total_pattern = r'\*+\s*TOTAL\s+(\d+\.\d{2})'
         
         # Pattern for item lines: E followed by item code, name, price, and tax indicator
-        # Example: "E                  849772 BRIOCHE 24OZ 6.99 N"
         item_pattern = r'E\s+(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+[NY]'
         
+        # Pattern for partial item lines (item code only with price on next line)
+        partial_item_pattern = r'E\s+(\d+)\s+(\d+\.\d{2})\s+[NY]'
+        
         # Pattern for discount lines: item code / original code followed by discount amount
-        # Example: "351425 / 3741        2.00-"
         discount_pattern = r'(\d+)\s*/\s*(\d+)\s+(\d+\.\d{2})-'
         
         # Pattern for non-food items (taxable): item code, name, price, Y
-        # Example: "1032422 PALMOLIVE    8.99 Y"
         taxable_item_pattern = r'^(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+Y'
         
         # Store discounts to apply later
@@ -125,7 +125,7 @@ def parse_costco_receipt(text):
                 i += 1
                 continue
             
-            # Check for food items (starting with E)
+            # Check for food items (starting with E) - complete line with name and price
             item_match = re.match(item_pattern, line)
             if item_match:
                 item_code = item_match.group(1)
@@ -136,6 +136,39 @@ def parse_costco_receipt(text):
                 items.append({
                     'item_code': item_code,
                     'item_name': item_name,
+                    'price': price,
+                    'discount': discount
+                })
+                i += 1
+                continue
+            
+            # Check for partial item lines (item code with price, but name on previous lines)
+            partial_match = re.match(partial_item_pattern, line)
+            if partial_match:
+                item_code = partial_match.group(1)
+                price = float(partial_match.group(2))
+                discount = discounts.get(item_code, 0.0)
+                
+                # Look backwards for the item name
+                item_name_parts = []
+                j = i - 1
+                while j >= 0 and j > i - 5:  # Look back up to 5 lines
+                    prev_line = lines[j]
+                    # Stop if we hit another item line or receipt metadata
+                    if (re.match(r'E\s+\d+', prev_line) or 
+                        re.match(r'Member|KING OF PRUSSIA|^\d{20}', prev_line) or
+                        'SUBTOTAL' in prev_line or 'TAX' in prev_line or 'TOTAL' in prev_line):
+                        break
+                    # Skip lines that are just single words or numbers
+                    if len(prev_line.split()) >= 1 and not prev_line.isdigit():
+                        item_name_parts.insert(0, prev_line)
+                    j -= 1
+                
+                item_name = ' '.join(item_name_parts) if item_name_parts else f"ITEM {item_code}"
+                
+                items.append({
+                    'item_code': item_code,
+                    'item_name': item_name.strip(),
                     'price': price,
                     'discount': discount
                 })
@@ -161,14 +194,28 @@ def parse_costco_receipt(text):
             
             i += 1
         
+        # Calculate totals for validation
+        calculated_subtotal = sum(item['price'] - item['discount'] for item in items)
+        total_discounts = sum(item['discount'] for item in items)
+        
+        # Validation flags
+        subtotal_valid = abs(calculated_subtotal - (subtotal or 0)) < 0.01 if subtotal else None
+        total_valid = abs(calculated_subtotal + (tax or 0) - (total or 0)) < 0.01 if total else None
+        
         logging.debug(f"Parsed items: {items}")
-        logging.debug(f"Subtotal: {subtotal}, Tax: {tax}, Total: {total}")
+        logging.debug(f"Subtotal: {subtotal} (calculated: {calculated_subtotal:.2f}, valid: {subtotal_valid})")
+        logging.debug(f"Tax: {tax}, Total: {total} (valid: {total_valid})")
+        logging.debug(f"Total discounts: {total_discounts:.2f}")
         
         return {
             'items': items,
             'subtotal': subtotal,
             'tax': tax,
-            'total': total
+            'total': total,
+            'calculated_subtotal': calculated_subtotal,
+            'total_discounts': total_discounts,
+            'subtotal_valid': subtotal_valid,
+            'total_valid': total_valid
         }
     except Exception as e:
         logging.error(f"Error parsing receipt: {e}")
@@ -227,7 +274,11 @@ def upload_file():
             'items': parsed_data['items'],
             'subtotal': parsed_data['subtotal'],
             'tax': parsed_data['tax'],
-            'total': parsed_data['total']
+            'total': parsed_data['total'],
+            'calculated_subtotal': parsed_data['calculated_subtotal'],
+            'total_discounts': parsed_data['total_discounts'],
+            'subtotal_valid': parsed_data['subtotal_valid'],
+            'total_valid': parsed_data['total_valid']
         }
         
         receipts_data.append(new_receipt)

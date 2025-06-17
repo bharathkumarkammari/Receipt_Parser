@@ -216,16 +216,46 @@
                                                             <div class="card-body">
                                                                 <div class="d-flex justify-content-between">
                                                                     <span>Subtotal:</span>
-                                                                    <span>{% if receipt.subtotal %} ${{ "%.2f"|format(receipt.subtotal) }}{% else %}N/A{% endif %}</span>
+                                                                    <span>
+                                                                        {% if receipt.get('subtotal') %} 
+                                                                            ${{ "%.2f"|format(receipt.get('subtotal')) }}
+                                                                            {% if receipt.get('subtotal_valid') == True %}
+                                                                                <span class="badge bg-success ms-1">✓ Validated</span>
+                                                                            {% elif receipt.get('subtotal_valid') == False %}
+                                                                                <span class="badge bg-warning ms-1">⚠ Mismatch</span>
+                                                                            {% endif %}
+                                                                        {% else %}N/A{% endif %}
+                                                                    </span>
                                                                 </div>
+                                                                {% if receipt.get('calculated_subtotal') %}
+                                                                <div class="d-flex justify-content-between text-muted small">
+                                                                    <span>Calculated:</span>
+                                                                    <span>${{ "%.2f"|format(receipt.get('calculated_subtotal')) }}</span>
+                                                                </div>
+                                                                {% endif %}
                                                                 <div class="d-flex justify-content-between">
                                                                     <span>Tax:</span>
-                                                                    <span>{% if receipt.tax %} ${{ "%.2f"|format(receipt.tax) }}{% else %}N/A{% endif %}</span>
+                                                                    <span>{% if receipt.get('tax') %} ${{ "%.2f"|format(receipt.get('tax')) }}{% else %}$0.00{% endif %}</span>
                                                                 </div>
+                                                                {% if receipt.get('total_discounts') and receipt.get('total_discounts') > 0 %}
+                                                                <div class="d-flex justify-content-between text-success">
+                                                                    <span>Total Savings:</span>
+                                                                    <span>-${{ "%.2f"|format(receipt.get('total_discounts')) }}</span>
+                                                                </div>
+                                                                {% endif %}
                                                                 <hr>
                                                                 <div class="d-flex justify-content-between">
                                                                     <strong>Total:</strong>
-                                                                    <strong class="text-success">{% if receipt.total %} ${{ "%.2f"|format(receipt.total) }}{% else %}N/A{% endif %}</strong>
+                                                                    <strong class="text-success">
+                                                                        {% if receipt.get('total') %} 
+                                                                            ${{ "%.2f"|format(receipt.get('total')) }}
+                                                                            {% if receipt.get('total_valid') == True %}
+                                                                                <span class="badge bg-success ms-1">✓ Validated</span>
+                                                                            {% elif receipt.get('total_valid') == False %}
+                                                                                <span class="badge bg-warning ms-1">⚠ Mismatch</span>
+                                                                            {% endif %}
+                                                                        {% else %}N/A{% endif %}
+                                                                    </strong>
                                                                 </div>
                                                             </div>
                                                         </div>
