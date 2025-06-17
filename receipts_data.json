@@ -1,1 +1,66 @@
-[]
+[
+  {
+    "id": 1,
+    "filename": "Costco Receipt 01-13-2025.pdf",
+    "upload_date": "2025-06-17T02:45:34.789732",
+    "items": [
+      {
+        "item_code": "1491866",
+        "item_name": "PUMPKIN SEED",
+        "price": 9.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "720650",
+        "item_name": "MINI CUKES",
+        "price": 6.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "1462714",
+        "item_name": "KS ORG A2 PR",
+        "price": 13.59,
+        "discount": 0.0
+      },
+      {
+        "item_code": "96716",
+        "item_name": "ORG SPINACH",
+        "price": 4.29,
+        "discount": 0.0
+      },
+      {
+        "item_code": "39036",
+        "item_name": "ROMAINE",
+        "price": 4.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "27003",
+        "item_name": "STRAWBERRIES",
+        "price": 7.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "48757",
+        "item_name": "SPRING MIX",
+        "price": 4.29,
+        "discount": 0.0
+      },
+      {
+        "item_code": "18600",
+        "item_name": "MANDARINS",
+        "price": 6.99,
+        "discount": 0.0
+      },
+      {
+        "item_code": "427381",
+        "item_name": "KS ORG EGGS",
+        "price": 7.59,
+        "discount": 0.0
+      }
+    ],
+    "subtotal": 66.71,
+    "tax": 0.0,
+    "total": 66.71
+  }
+]
