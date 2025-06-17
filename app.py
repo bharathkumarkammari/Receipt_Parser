@@ -64,23 +64,38 @@ def extract_text_from_pdf(pdf_path):
 def parse_costco_receipt(text):
     """Parse Costco receipt text to extract items, prices, and totals"""
     try:
-        lines = text.split('\n')
+        lines = [line.strip() for line in text.split('\n') if line.strip()]
         items = []
         subtotal = None
         tax = None
         total = None
         
-        # Regex patterns for Costco receipts
-        item_pattern = r'^(\d{6,8})\s+(.+?)(?:\s+(\d+\.?\d*)\s*$)'
-        discount_pattern = r'^\s*(\d+\.?\d*)-\s*$'
-        price_pattern = r'\s+(\d+\.\d{2})\s*$'
+        # Debug: Log the extracted text to understand the format
+        logging.debug(f"Receipt text lines: {lines}")
+        
+        # Regex patterns for Costco receipts - updated for the actual format
         subtotal_pattern = r'SUBTOTAL\s+(\d+\.\d{2})'
         tax_pattern = r'TAX\s+(\d+\.\d{2})'
-        total_pattern = r'TOTAL\s+(\d+\.\d{2})'
+        total_pattern = r'\*+\s*TOTAL\s+(\d+\.\d{2})'
+        
+        # Pattern for item lines: E followed by item code, name, price, and tax indicator
+        # Example: "E                  849772 BRIOCHE 24OZ 6.99 N"
+        item_pattern = r'E\s+(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+[NY]'
+        
+        # Pattern for discount lines: item code / original code followed by discount amount
+        # Example: "351425 / 3741        2.00-"
+        discount_pattern = r'(\d+)\s*/\s*(\d+)\s+(\d+\.\d{2})-'
+        
+        # Pattern for non-food items (taxable): item code, name, price, Y
+        # Example: "1032422 PALMOLIVE    8.99 Y"
+        taxable_item_pattern = r'^(\d+)\s+(.+?)\s+(\d+\.\d{2})\s+Y'
+        
+        # Store discounts to apply later
+        discounts = {}
         
         i = 0
         while i < len(lines):
-            line = lines[i].strip()
+            line = lines[i]
             
             # Check for subtotal, tax, total
             subtotal_match = re.search(subtotal_pattern, line, re.IGNORECASE)
@@ -101,22 +116,22 @@ def parse_costco_receipt(text):
                 i += 1
                 continue
             
-            # Check for item lines
-            # Pattern 1: Item code and name on same line with price
-            item_match = re.match(r'^(\d{6,8})\s+(.+?)\s+(\d+\.\d{2})\s*$', line)
+            # Check for discount lines first
+            discount_match = re.match(discount_pattern, line)
+            if discount_match:
+                discount_code = discount_match.group(2)  # The original item code
+                discount_amount = float(discount_match.group(3))
+                discounts[discount_code] = discount_amount
+                i += 1
+                continue
+            
+            # Check for food items (starting with E)
+            item_match = re.match(item_pattern, line)
             if item_match:
                 item_code = item_match.group(1)
                 item_name = item_match.group(2).strip()
                 price = float(item_match.group(3))
-                discount = 0.0
-                
-                # Check next line for discount
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    discount_match = re.match(discount_pattern, next_line)
-                    if discount_match:
-                        discount = float(discount_match.group(1))
-                        i += 1  # Skip the discount line
+                discount = discounts.get(item_code, 0.0)
                 
                 items.append({
                     'item_code': item_code,
@@ -127,55 +142,27 @@ def parse_costco_receipt(text):
                 i += 1
                 continue
             
-            # Pattern 2: Item code and partial name, with continuation on next line
-            item_code_match = re.match(r'^(\d{6,8})\s+(.+)$', line)
-            if item_code_match and not re.search(r'\d+\.\d{2}$', line):
-                item_code = item_code_match.group(1)
-                item_name = item_code_match.group(2).strip()
-                price = 0.0
-                discount = 0.0
+            # Check for taxable items (no E prefix)
+            taxable_match = re.match(taxable_item_pattern, line)
+            if taxable_match:
+                item_code = taxable_match.group(1)
+                item_name = taxable_match.group(2).strip()
+                price = float(taxable_match.group(3))
+                discount = discounts.get(item_code, 0.0)
                 
-                # Look for price in next few lines
-                j = i + 1
-                while j < len(lines) and j < i + 3:
-                    next_line = lines[j].strip()
-                    
-                    # Check if this line has a price
-                    price_match = re.search(r'(\d+\.\d{2})\s*$', next_line)
-                    if price_match:
-                        price = float(price_match.group(1))
-                        # Remove price from line and add to item name
-                        name_part = re.sub(r'\s+\d+\.\d{2}\s*$', '', next_line).strip()
-                        if name_part:
-                            item_name += " " + name_part
-                        
-                        # Check for discount on following line
-                        if j + 1 < len(lines):
-                            discount_line = lines[j + 1].strip()
-                            discount_match = re.match(discount_pattern, discount_line)
-                            if discount_match:
-                                discount = float(discount_match.group(1))
-                                j += 1  # Skip discount line
-                        
-                        break
-                    else:
-                        # Add this line to item name if it doesn't contain totals
-                        if not re.search(r'(SUBTOTAL|TAX|TOTAL)', next_line, re.IGNORECASE):
-                            item_name += " " + next_line
-                    j += 1
-                
-                if price > 0:
-                    items.append({
-                        'item_code': item_code,
-                        'item_name': item_name.strip(),
-                        'price': price,
-                        'discount': discount
-                    })
-                
-                i = j
+                items.append({
+                    'item_code': item_code,
+                    'item_name': item_name,
+                    'price': price,
+                    'discount': discount
+                })
+                i += 1
                 continue
             
             i += 1
+        
+        logging.debug(f"Parsed items: {items}")
+        logging.debug(f"Subtotal: {subtotal}, Tax: {tax}, Total: {total}")
         
         return {
             'items': items,
