@@ -7,25 +7,63 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    <style>
+        .left-panel {
+            height: 100vh;
+            overflow-y: auto;
+            padding: 20px;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .right-panel {
+            height: 100vh;
+            padding: 20px;
+            display: flex;
+        }
+        .dashboard-container {
+            flex: 1;
+            min-height: calc(100vh - 40px); /* Account for padding */
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            overflow: hidden; /* Ensure the dashboard doesn't overflow */
+        }
+        /* Make the page full height */
+        html, body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden; /* Prevent double scrollbars */
+        }
+        /* Custom scrollbar for the left panel */
+        .left-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+        .left-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .left-panel::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        .left-panel::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-4">
-        <!-- Header -->
-        <div class="row">
-            <div class="col-12">
-                <h1 class="text-center mb-4">
-                    <i class="fas fa-receipt me-2"></i>
-                    Costco Receipt Parser
-                </h1>
-                <p class="text-center text-muted mb-5">Upload your Costco receipt PDFs to extract and track your purchase history</p>
-            </div>
-        </div>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Left Panel - Upload and Receipt Data -->
+            <div class="col-md-6 left-panel">
+                <div class="mb-4">
+                    <h1 class="h3 mb-3">
+                        <i class="fas fa-receipt me-2"></i>
+                        Costco Receipt Parser
+                    </h1>
+                    <p class="text-muted">Upload your Costco receipt PDFs to extract and track your purchase history</p>
+                </div>
 
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="row">
-                    <div class="col-12">
+                <!-- Flash Messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
                         {% for category, message in messages %}
                             <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
                                 <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'exclamation-circle' if category == 'warning' else 'check-circle' }} me-2"></i>
@@ -33,14 +71,10 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                             </div>
                         {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-        {% endwith %}
+                    {% endif %}
+                {% endwith %}
 
-        <!-- Upload Section -->
-        <div class="row">
-            <div class="col-12">
+                <!-- Upload Section -->
                 <div class="card mb-4">
                     <div class="card-header">
                         <h5 class="mb-0">
@@ -71,22 +105,10 @@
                                 </div>
                             </div>
                         </form>
-                        
-                        <!-- Loading indicator -->
-                        <div id="loadingIndicator" class="text-center d-none">
-                            <div class="spinner-border text-primary me-2" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                            Processing your receipt...
-                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Receipt History -->
-        <div class="row">
-            <div class="col-12">
+                <!-- Receipt History -->
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
@@ -104,8 +126,6 @@
                                         Upload Latest to Google Sheets
                                     </button>
                                 </form>
-                            {% endif %}
-                            {% if receipts %}
                                 <form action="{{ url_for('clear_data') }}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear all receipt data?');">
                                     <button type="submit" class="btn btn-outline-danger btn-sm">
                                         <i class="fas fa-trash me-1"></i>
@@ -115,175 +135,172 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="card-body">
-                        {% if not receipts %}
-                            <div class="text-center text-muted py-5">
-                                <i class="fas fa-inbox fa-3x mb-3"></i>
-                                <h6>No receipts uploaded yet</h6>
-                                <p>Upload your first Costco receipt PDF to get started</p>
-                            </div>
-                        {% else %}
-                            <!-- Summary Cards -->
-                            <div class="row mb-4">
-                                <div class="col-md-4">
-                                    <div class="card bg-primary bg-opacity-10 border-primary">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
-                                            <h5 class="card-title">
-                                                {{ receipts|selectattr('items')|map(attribute='items')|map('length')|sum }}
-                                            </h5>
-                                            <p class="card-text text-muted">Total Items</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-success bg-opacity-10 border-success">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                                            <h5 class="card-title">${{ "%.2f"|format(receipts|map(attribute='total')|select|sum) }}</h5>
-                                            <p class="card-text text-muted">Total Spent</p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="card bg-warning bg-opacity-10 border-warning">
-                                        <div class="card-body text-center">
-                                            <i class="fas fa-tag fa-2x text-warning mb-2"></i>
-                                            <h5 class="card-title">${{ "%.2f"|format(receipts|map(attribute='items')|map('map', attribute='discount')|map('sum')|sum) }}</h5>
-                                            <p class="card-text text-muted">Total Savings</p>
-                                        </div>
-                                    </div>
+                    <div class="card-body p-0">
+                        <!-- Summary Cards -->
+                        <div class="row g-0 p-3">
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                                    <h3 class="mb-0">{{ receipts|selectattr('items')|map(attribute='items')|map('length')|sum }}</h3>
+                                    <p class="text-muted mb-0">Total Items</p>
                                 </div>
                             </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                                    <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='total')|select|sum) }}</h3>
+                                    <p class="text-muted mb-0">Total Spent</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center p-3">
+                                    <i class="fas fa-tag fa-2x text-warning mb-2"></i>
+                                    <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='items')|map('map', attribute='discount')|map('sum')|sum) }}</h3>
+                                    <p class="text-muted mb-0">Total Savings</p>
+                                </div>
+                            </div>
+                        </div>
 
-                            <!-- Receipt Accordion -->
-                            <div class="accordion" id="receiptsAccordion">
-                                {% for receipt in receipts|reverse %}
-                                    <div class="accordion-item">
-                                        <h2 class="accordion-header" id="heading{{ receipt.id }}">
-                                            <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ receipt.id }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ receipt.id }}">
-                                                <div class="d-flex justify-content-between align-items-center w-100 me-3">
-                                                    <div>
-                                                        <strong>{{ receipt.filename }}</strong>
-                                                        <br>
-                                                        <small class="text-muted">
-                                                            <i class="fas fa-calendar me-1"></i>
-                                                            {{ receipt.upload_date[:10] }}
-                                                            <i class="fas fa-shopping-bag ms-3 me-1"></i>
-                                                            {% if receipt.get('items') %}{{ receipt.get('items')|length }}{% else %}0{% endif %} items
-                                                        </small>
-                                                    </div>
-                                                    <div class="text-end">
-                                                        {% if receipt.total %}
-                                                            <strong class="text-success">${{ "%.2f"|format(receipt.total) }}</strong>
-                                                        {% endif %}
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        </h2>
-                                        <div id="collapse{{ receipt.id }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" aria-labelledby="heading{{ receipt.id }}" data-bs-parent="#receiptsAccordion">
-                                            <div class="accordion-body">
-                                                <!-- Items Table -->
-                                                {% if receipt.get('items') %}
-                                                    <div class="table-responsive">
-                                                        <table class="table table-striped table-hover">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Item Code</th>
-                                                                    <th>Item Name</th>
-                                                                    <th class="text-end">Price</th>
-                                                                    <th class="text-end">Discount</th>
-                                                                    <th class="text-end">Final Price</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {% for item in receipt.get('items', []) %}
-                                                                    <tr>
-                                                                        <td class="font-monospace">{{ item.item_code }}</td>
-                                                                        <td>{{ item.item_name }}</td>
-                                                                        <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
-                                                                        <td class="text-end">
-                                                                            {% if item.discount > 0 %}
-                                                                                <span class="text-success">-${{ "%.2f"|format(item.discount) }}</span>
-                                                                            {% else %}
-                                                                                <span class="text-muted">-</span>
-                                                                            {% endif %}
-                                                                        </td>
-                                                                        <td class="text-end">
-                                                                            <strong>${{ "%.2f"|format(item.price - item.discount) }}</strong>
-                                                                        </td>
-                                                                    </tr>
-                                                                {% endfor %}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                {% endif %}
-
-                                                <!-- Receipt Totals -->
-                                                <div class="row mt-3">
-                                                    <div class="col-md-6 offset-md-6">
-                                                        <div class="card">
-                                                            <div class="card-body">
-                                                                <div class="d-flex justify-content-between">
-                                                                    <span>Subtotal:</span>
-                                                                    <span>
-                                                                        {% if receipt.get('subtotal') %} 
-                                                                            ${{ "%.2f"|format(receipt.get('subtotal')) }}
-                                                                            {% if receipt.get('subtotal_valid') == True %}
-                                                                                <span class="badge bg-success ms-1">✓ Validated</span>
-                                                                            {% elif receipt.get('subtotal_valid') == False %}
-                                                                                <span class="badge bg-warning ms-1">⚠ Mismatch</span>
-                                                                            {% endif %}
-                                                                        {% else %}N/A{% endif %}
-                                                                    </span>
-                                                                </div>
-                                                                {% if receipt.get('calculated_subtotal') %}
-                                                                <div class="d-flex justify-content-between text-muted small">
-                                                                    <span>Calculated:</span>
-                                                                    <span>${{ "%.2f"|format(receipt.get('calculated_subtotal')) }}</span>
-                                                                </div>
-                                                                {% endif %}
-                                                                <div class="d-flex justify-content-between">
-                                                                    <span>Tax:</span>
-                                                                    <span>{% if receipt.get('tax') %} ${{ "%.2f"|format(receipt.get('tax')) }}{% else %}$0.00{% endif %}</span>
-                                                                </div>
-                                                                {% if receipt.get('total_discounts') and receipt.get('total_discounts') > 0 %}
-                                                                <div class="d-flex justify-content-between text-success">
-                                                                    <span>Total Savings:</span>
-                                                                    <span>-${{ "%.2f"|format(receipt.get('total_discounts')) }}</span>
-                                                                </div>
-                                                                {% endif %}
-                                                                <hr>
-                                                                <div class="d-flex justify-content-between">
-                                                                    <strong>Total:</strong>
-                                                                    <strong class="text-success">
-                                                                        {% if receipt.get('total') %} 
-                                                                            ${{ "%.2f"|format(receipt.get('total')) }}
-                                                                            {% if receipt.get('total_valid') == True %}
-                                                                                <span class="badge bg-success ms-1">✓ Validated</span>
-                                                                            {% elif receipt.get('total_valid') == False %}
-                                                                                <span class="badge bg-warning ms-1">⚠ Mismatch</span>
-                                                                            {% endif %}
-                                                                        {% else %}N/A{% endif %}
-                                                                    </strong>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                        <!-- Receipt Accordion -->
+                        <div class="accordion" id="receiptsAccordion">
+                            {% for receipt in receipts|reverse %}
+                                <div class="accordion-item">
+                                    <div class="d-flex justify-content-between align-items-center p-3">
+                                        <div class="d-flex align-items-center">
+                                            <form action="{{ url_for('delete_receipt', receipt_id=receipt.id) }}" method="post" class="me-3" onsubmit="return confirm('Are you sure you want to delete this receipt?');">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Receipt">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                            <div>
+                                                <strong>{{ receipt.filename }}</strong>
+                                                <div class="text-muted small">
+                                                    <i class="fas fa-calendar me-1"></i>
+                                                    {{ receipt.upload_date[:10] }}
+                                                    {% if receipt.receipt_date %}
+                                                        <span class="ms-2"><i class="fas fa-clock me-1"></i>Date on Receipt: <strong>{{ receipt.receipt_date }}</strong></span>
+                                                    {% endif %}
+                                                    <i class="fas fa-shopping-bag ms-3 me-1"></i>
+                                                    {{ receipt.get('items')|length if receipt.get('items') else 0 }} items
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="d-flex align-items-center">
+                                            {% if receipt.total %}
+                                                <span class="text-success h5 mb-0">${{ "%.2f"|format(receipt.total) }}</span>
+                                            {% endif %}
+                                            <button class="btn btn-link ms-3 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ receipt.id }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ receipt.id }}">
+                                                <i class="fas fa-chevron-down"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
+                                    <div id="collapse{{ receipt.id }}" class="collapse {% if loop.first %}show{% endif %}" data-bs-parent="#receiptsAccordion">
+                                        <div class="p-3 border-top">
+                                            {% if receipt.get('items') %}
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Item Code</th>
+                                                                <th>Item Name</th>
+                                                                <th class="text-end">Price</th>
+                                                                <th class="text-end">Discount</th>
+                                                                <th class="text-end">Final Price</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {% for item in receipt.get('items', []) %}
+                                                                <tr>
+                                                                    <td class="font-monospace">{{ item.item_code }}</td>
+                                                                    <td>{{ item.item_name }}</td>
+                                                                    <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
+                                                                    <td class="text-end">
+                                                                        {% if item.discount > 0 %}
+                                                                            <span class="text-success">-${{ "%.2f"|format(item.discount) }}</span>
+                                                                        {% else %}
+                                                                            <span class="text-muted">-</span>
+                                                                        {% endif %}
+                                                                    </td>
+                                                                    <td class="text-end">
+                                                                        <strong>${{ "%.2f"|format(item.price - item.discount) }}</strong>
+                                                                    </td>
+                                                                </tr>
+                                                            {% endfor %}
+                                                        </tbody>
+                                                        <tfoot class="border-top">
+                                                            <tr>
+                                                                <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                                                                <td class="text-end">
+                                                                    <strong>${{ "%.2f"|format(receipt.get('subtotal', 0)) }}</strong>
+                                                                    {% if receipt.get('subtotal_valid') is not none %}
+                                                                        {% if receipt.get('subtotal_valid') %}
+                                                                            <i class="fas fa-check-circle text-success ms-2" title="Validated: Sum of items matches subtotal"></i>
+                                                                        {% else %}
+                                                                            <i class="fas fa-exclamation-circle text-warning ms-2" title="Warning: Sum of items ({{ "%.2f"|format(receipt.get('calculated_subtotal', 0)) }}) doesn't match subtotal"></i>
+                                                                        {% endif %}
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="4" class="text-end"><strong>Tax:</strong></td>
+                                                                <td class="text-end"><strong>${{ "%.2f"|format(receipt.get('tax', 0)) }}</strong></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                                                <td class="text-end">
+                                                                    <strong class="text-success">${{ "%.2f"|format(receipt.total) }}</strong>
+                                                                    {% if receipt.get('total_valid') is not none %}
+                                                                        {% if receipt.get('total_valid') %}
+                                                                            <i class="fas fa-check-circle text-success ms-2" title="Validated: Subtotal + tax matches total"></i>
+                                                                        {% else %}
+                                                                            <i class="fas fa-exclamation-circle text-warning ms-2" title="Warning: Calculated total ({{ "%.2f"|format(receipt.get('calculated_total', 0)) }}) doesn't match receipt total"></i>
+                                                                        {% endif %}
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Tableau Dashboard -->
+            <div class="col-md-6 right-panel">
+                <div class="dashboard-container" id="vizContainer">
+                    <!-- Tableau dashboard will be loaded here -->
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script type="text/javascript" src="https://public.tableau.com/javascripts/api/tableau-2.min.js"></script>
+    <script>
+        function initViz() {
+            var containerDiv = document.getElementById("vizContainer");
+            var url = "{{ tableau_url }}";
+            var options = {
+                hideTabs: true,
+                hideToolbar: true,
+                width: "100%",
+                height: "100%",
+                onFirstInteractive: function () {
+                    console.log("Dashboard is interactive and ready");
+                }
+            };
+            // Create the viz
+            var viz = new tableau.Viz(containerDiv, url, options);
+        }
+
+        // Initialize the visualization when the page loads
+        document.addEventListener("DOMContentLoaded", initViz);
+    </script>
 </body>
 </html>

@@ -120,14 +120,17 @@ def combine_multiline_items(lines):
     return combined
 
 def parse_costco_receipt(text):
-    """Parse Costco receipt text to extract items, prices, and totals"""
+    """Parse Costco receipt text to extract items, prices, totals, and date"""
     try:
         lines = [line.strip() for line in text.split('\n') if line.strip()]
         items = []
         subtotal = None
         tax = None
         total = None
-        
+        # Extract date (MM/DD/YYYY)
+        date_pattern = r'(\d{2}/\d{2}/\d{4})'
+        date_match = re.search(date_pattern, text)
+        receipt_date = date_match.group(1) if date_match else None
         # Regex patterns for Costco receipts - updated for all item formats
         subtotal_pattern = r'SUBTOTAL\s+(\d+\.\d{2})'
         tax_pattern = r'TAX\s+(\d+\.\d{2})'
@@ -263,7 +266,8 @@ def parse_costco_receipt(text):
             'calculated_total': calculated_total,
             'total_discounts': total_discounts,
             'subtotal_valid': subtotal_valid,
-            'total_valid': total_valid
+            'total_valid': total_valid,
+            'receipt_date': receipt_date
         }
     except Exception as e:
         logging.error(f"Error parsing receipt: {e}")
@@ -273,7 +277,8 @@ def parse_costco_receipt(text):
 def index():
     """Main page showing upload form and receipt history"""
     receipts_data = load_receipts_data()
-    return render_template('index.html', receipts=receipts_data)
+    tableau_url = "https://public.tableau.com/views/ReceiptDashboard/Dashboard?:showVizHome=no&:embed=true"
+    return render_template('index.html', receipts=receipts_data, tableau_url=tableau_url)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -335,7 +340,8 @@ def upload_file():
             'calculated_total': parsed_data['calculated_total'],
             'total_discounts': parsed_data['total_discounts'],
             'subtotal_valid': parsed_data['subtotal_valid'],
-            'total_valid': parsed_data['total_valid']
+            'total_valid': parsed_data['total_valid'],
+            'receipt_date': parsed_data['receipt_date']
         }
         
         receipts_data.append(new_receipt)
@@ -373,7 +379,7 @@ def clear_data():
 
 @app.route('/upload_to_gsheet', methods=['POST'])
 def upload_to_gsheet():
-    """Upload the latest parsed receipt to Google Sheets"""
+    """Upload the latest parsed receipt to Google Sheets, including date column"""
     try:
         receipts_data = load_receipts_data()
         if not receipts_data:
@@ -387,21 +393,43 @@ def upload_to_gsheet():
         client = gspread.authorize(creds)
         # Open the sheet (replace with your sheet name)
         sheet = client.open("Costco_Input").sheet1
-        # Prepare header and rows
-        header = ["ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE"]
-        rows = [
-            [item['item_code'], item['item_name'], item['price'], item.get('discount', ''), item.get('final_price', '')]
-            for item in items
-        ]
-        # Append header only if sheet is empty
+        # Add 'Date' to header if not present
+        header = ["Item Code", "Item Name", "Price", "Discount", "Final Price", "Date"]
         if len(sheet.get_all_values()) == 0:
             sheet.append_row(header)
-        for row in rows:
+        # For each item, add a row with the date
+        for item in items:
+            row = [
+                item['item_code'],
+                item['item_name'],
+                item['price'],
+                item.get('discount', ''),
+                item.get('final_price', ''),
+                latest.get('receipt_date')
+            ]
             sheet.append_row(row)
         flash('Latest receipt uploaded to Google Sheets!', 'success')
     except Exception as e:
         logging.error(f"Error uploading to Google Sheets: {e}")
         flash('Failed to upload to Google Sheets. Check server logs and credentials.', 'error')
+    return redirect(url_for('index'))
+
+@app.route('/delete_receipt/<receipt_id>', methods=['POST'])
+def delete_receipt(receipt_id):
+    """Delete a specific receipt by its ID"""
+    try:
+        receipts = load_receipts_data()
+        # Convert receipt_id to integer for comparison
+        receipt_id = int(receipt_id)
+        # Find and remove the receipt with the matching ID
+        receipts = [r for r in receipts if r.get('id') != receipt_id]
+        if save_receipts_data(receipts):
+            flash('Receipt deleted successfully', 'success')
+        else:
+            flash('Error deleting receipt', 'error')
+    except Exception as e:
+        logging.error(f"Error deleting receipt: {e}")
+        flash('Error deleting receipt', 'error')
     return redirect(url_for('index'))
 
 if __name__ == '__main__':

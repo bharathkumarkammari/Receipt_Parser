@@ -2,7 +2,7 @@
   {
     "id": 1,
     "filename": "Costco Receipt.pdf",
-    "upload_date": "2025-06-17T01:10:46.644997",
+    "upload_date": "2025-06-18T15:16:32.189065",
     "items": [
       {
         "item_code": "1133164",
@@ -159,12 +159,218 @@
     "calculated_total": 203.35999999999999,
     "total_discounts": 6.0,
     "subtotal_valid": true,
-    "total_valid": true
+    "total_valid": true,
+    "receipt_date": "02/10/2025"
   },
   {
     "id": 2,
+    "filename": "Costco Receipt 1.pdf",
+    "upload_date": "2025-06-18T15:19:41.061413",
+    "items": [
+      {
+        "item_code": "849772",
+        "item_name": "BRIOCHE 24OZ",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
+      },
+      {
+        "item_code": "1462714",
+        "item_name": "KS ORG A2 PR",
+        "price": 10.76,
+        "discount": 0.0,
+        "final_price": 10.76
+      },
+      {
+        "item_code": "1617506",
+        "item_name": "KS ORG CSHW",
+        "price": 14.89,
+        "discount": 0.0,
+        "final_price": 14.89
+      },
+      {
+        "item_code": "21897",
+        "item_name": "BNLS BREAST",
+        "price": 24.16,
+        "discount": 0.0,
+        "final_price": 24.16
+      },
+      {
+        "item_code": "1352",
+        "item_name": "OG CARROT6LB",
+        "price": 5.89,
+        "discount": 0.0,
+        "final_price": 5.89
+      },
+      {
+        "item_code": "30669",
+        "item_name": "BANANAS",
+        "price": 1.49,
+        "discount": 0.0,
+        "final_price": 1.49
+      },
+      {
+        "item_code": "27003",
+        "item_name": "STRAWBERRIES",
+        "price": 4.99,
+        "discount": 0.0,
+        "final_price": 4.99
+      },
+      {
+        "item_code": "1320289",
+        "item_name": "NAE NUGGETS",
+        "price": 13.99,
+        "discount": 0.0,
+        "final_price": 13.99
+      },
+      {
+        "item_code": "203444",
+        "item_name": "KS PECANS",
+        "price": 11.99,
+        "discount": 0.0,
+        "final_price": 11.99
+      },
+      {
+        "item_code": "48757",
+        "item_name": "SPRING MIX",
+        "price": 4.29,
+        "discount": 0.0,
+        "final_price": 4.29
+      },
+      {
+        "item_code": "1424237",
+        "item_name": "KS GR FD BTR",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "96716",
+        "item_name": "ORG SPINACH",
+        "price": 4.29,
+        "discount": 0.0,
+        "final_price": 4.29
+      },
+      {
+        "item_code": "8691",
+        "item_name": "EGGS 5 DOZ.",
+        "price": 21.69,
+        "discount": 0.0,
+        "final_price": 21.69
+      },
+      {
+        "item_code": "9158",
+        "item_name": "HAMI MELON",
+        "price": 5.99,
+        "discount": 0.0,
+        "final_price": 5.99
+      },
+      {
+        "item_code": "531860",
+        "item_name": "DAHI YOGURT",
+        "price": 6.49,
+        "discount": 0.0,
+        "final_price": 6.49
+      },
+      {
+        "item_code": "19813",
+        "item_name": "MUSHROOMS",
+        "price": 3.69,
+        "discount": 0.0,
+        "final_price": 3.69
+      },
+      {
+        "item_code": "3741",
+        "item_name": "4LB ENVY",
+        "price": 6.99,
+        "discount": 2.0,
+        "final_price": 4.99
+      },
+      {
+        "item_code": "7812",
+        "item_name": "YELLOW ONION",
+        "price": 3.99,
+        "discount": 0.0,
+        "final_price": 3.99
+      },
+      {
+        "item_code": "5938",
+        "item_name": "POTATOES",
+        "price": 5.99,
+        "discount": 0.0,
+        "final_price": 5.99
+      },
+      {
+        "item_code": "18600",
+        "item_name": "MANDARINS",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
+      },
+      {
+        "item_code": "8789",
+        "item_name": "PINEAPPLE",
+        "price": 2.89,
+        "discount": 0.0,
+        "final_price": 2.89
+      },
+      {
+        "item_code": "1224482",
+        "item_name": "GOPI PANEER",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "1032422",
+        "item_name": "PALMOLIVE",
+        "price": 8.99,
+        "discount": 2.5,
+        "final_price": 6.49
+      },
+      {
+        "item_code": "1605917",
+        "item_name": "KS PINK SALT",
+        "price": 6.39,
+        "discount": 0.0,
+        "final_price": 6.39
+      },
+      {
+        "item_code": "5063",
+        "item_name": "BART PEARS",
+        "price": 8.99,
+        "discount": 0.0,
+        "final_price": 8.99
+      },
+      {
+        "item_code": "7816886",
+        "item_name": "FINISHTABS",
+        "price": 19.99,
+        "discount": 5.0,
+        "final_price": 14.989999999999998
+      },
+      {
+        "item_code": "57554",
+        "item_name": "BLUEBERRIES",
+        "price": 6.99,
+        "discount": 0.0,
+        "final_price": 6.99
+      }
+    ],
+    "subtotal": 230.27,
+    "tax": 1.29,
+    "total": 231.56,
+    "calculated_subtotal": 230.27,
+    "calculated_total": 231.56,
+    "total_discounts": 9.5,
+    "subtotal_valid": true,
+    "total_valid": true,
+    "receipt_date": "04/06/2025"
+  },
+  {
+    "id": 3,
     "filename": "Costco Receipt 01-13-2025.pdf",
-    "upload_date": "2025-06-17T01:10:58.194974",
+    "upload_date": "2025-06-18T15:19:53.954697",
     "items": [
       {
         "item_code": "1491866",
@@ -237,6 +443,305 @@
     "calculated_total": 66.71000000000001,
     "total_discounts": 0.0,
     "subtotal_valid": true,
-    "total_valid": true
+    "total_valid": true,
+    "receipt_date": "01/13/2025"
+  },
+  {
+    "id": 4,
+    "filename": "Costco Receipt 11-30-2024.pdf",
+    "upload_date": "2025-06-19T18:13:13.511559",
+    "items": [
+      {
+        "item_code": "1234275",
+        "item_name": "GERRY JACKET",
+        "price": 15.0,
+        "discount": 0.0,
+        "final_price": 15.0
+      },
+      {
+        "item_code": "1358148",
+        "item_name": "DIONIS CREAM",
+        "price": 11.99,
+        "discount": 4.0,
+        "final_price": 7.99
+      },
+      {
+        "item_code": "1632402",
+        "item_name": "RGGD HOODIE",
+        "price": 53.97,
+        "discount": 9.0,
+        "final_price": 44.97
+      },
+      {
+        "item_code": "935195",
+        "item_name": "BENGAY 2X4 Z",
+        "price": 20.98,
+        "discount": 0.0,
+        "final_price": 20.98
+      },
+      {
+        "item_code": "1644605",
+        "item_name": "LINDT GOLD",
+        "price": 25.98,
+        "discount": 0.0,
+        "final_price": 25.98
+      },
+      {
+        "item_code": "1717067",
+        "item_name": "BR BOMBERJKT",
+        "price": 119.96,
+        "discount": 20.0,
+        "final_price": 99.96
+      },
+      {
+        "item_code": "1636587",
+        "item_name": "CHARACTER3PC",
+        "price": 18.99,
+        "discount": 0.0,
+        "final_price": 18.99
+      },
+      {
+        "item_code": "1188878",
+        "item_name": "TRDNT FRUIT",
+        "price": 14.49,
+        "discount": 0.0,
+        "final_price": 14.49
+      },
+      {
+        "item_code": "401993",
+        "item_name": "HRSHY KISSES",
+        "price": 32.98,
+        "discount": 0.0,
+        "final_price": 32.98
+      },
+      {
+        "item_code": "1823485",
+        "item_name": "GHIR GLD BAG",
+        "price": 31.78,
+        "discount": 8.6,
+        "final_price": 23.18
+      },
+      {
+        "item_code": "1432124",
+        "item_name": "POCKY VTY",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "1690781",
+        "item_name": "BURTSBEES 12",
+        "price": 39.98,
+        "discount": 8.0,
+        "final_price": 31.979999999999997
+      },
+      {
+        "item_code": "461",
+        "item_name": "TOBLERONE",
+        "price": 11.49,
+        "discount": 0.0,
+        "final_price": 11.49
+      },
+      {
+        "item_code": "1851141",
+        "item_name": "BUILTBAR",
+        "price": 19.99,
+        "discount": 0.0,
+        "final_price": 19.99
+      },
+      {
+        "item_code": "1505302",
+        "item_name": "32D PLSH JKT",
+        "price": 67.96,
+        "discount": 16.0,
+        "final_price": 51.959999999999994
+      },
+      {
+        "item_code": "1835280",
+        "item_name": "TBLN TRUFFLE",
+        "price": 23.98,
+        "discount": 0.0,
+        "final_price": 23.98
+      },
+      {
+        "item_code": "1218715",
+        "item_name": "NUTELLA & GO",
+        "price": 15.99,
+        "discount": 0.0,
+        "final_price": 15.99
+      },
+      {
+        "item_code": "1268728",
+        "item_name": "UNREAL BARS",
+        "price": 10.89,
+        "discount": 0.0,
+        "final_price": 10.89
+      },
+      {
+        "item_code": "1815409",
+        "item_name": "EM COZY CARD",
+        "price": 16.99,
+        "discount": 0.0,
+        "final_price": 16.99
+      },
+      {
+        "item_code": "1560969",
+        "item_name": "MADEGOODMINI",
+        "price": 23.98,
+        "discount": 0.0,
+        "final_price": 23.98
+      },
+      {
+        "item_code": "1844395",
+        "item_name": "HEATEDBEANIE",
+        "price": 59.98,
+        "discount": 0.0,
+        "final_price": 59.98
+      },
+      {
+        "item_code": "1797068",
+        "item_name": "MONDFULLZIP",
+        "price": 16.99,
+        "discount": 4.0,
+        "final_price": 12.989999999999998
+      },
+      {
+        "item_code": "1286341",
+        "item_name": "MCRLF BP MTR",
+        "price": 44.99,
+        "discount": 9.0,
+        "final_price": 35.99
+      },
+      {
+        "item_code": "1448190",
+        "item_name": "NAUTICA JKT",
+        "price": 24.99,
+        "discount": 0.0,
+        "final_price": 24.99
+      },
+      {
+        "item_code": "1812942",
+        "item_name": "BFGUMMYBEARS",
+        "price": 16.99,
+        "discount": 0.0,
+        "final_price": 16.99
+      },
+      {
+        "item_code": "1803330",
+        "item_name": "EB DWN JKT",
+        "price": 12.0,
+        "discount": 0.0,
+        "final_price": 12.0
+      },
+      {
+        "item_code": "1799236",
+        "item_name": "BR 1/4 ZIP",
+        "price": 33.98,
+        "discount": 0.0,
+        "final_price": 33.98
+      },
+      {
+        "item_code": "1707643",
+        "item_name": "DOUBLE DARK",
+        "price": 11.69,
+        "discount": 0.0,
+        "final_price": 11.69
+      },
+      {
+        "item_code": "1797063",
+        "item_name": "MONDOSJOGGER",
+        "price": 12.99,
+        "discount": 3.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "107979",
+        "item_name": "KS CHOC. BAG",
+        "price": 83.96,
+        "discount": 0.0,
+        "final_price": 83.96
+      },
+      {
+        "item_code": "1632403",
+        "item_name": "RGGD TEE 2PK",
+        "price": 17.99,
+        "discount": 3.0,
+        "final_price": 14.989999999999998
+      }
+    ],
+    "subtotal": 839.31,
+    "tax": 0.0,
+    "total": 839.31,
+    "calculated_subtotal": 839.31,
+    "calculated_total": 839.31,
+    "total_discounts": 84.6,
+    "subtotal_valid": true,
+    "total_valid": true,
+    "receipt_date": "11/30/2024"
+  },
+  {
+    "id": 5,
+    "filename": "Costco receipt 18-06-25.pdf",
+    "upload_date": "2025-06-19T18:38:10.217544",
+    "items": [
+      {
+        "item_code": "7812",
+        "item_name": "YELLOW",
+        "price": 3.99,
+        "discount": 0.0,
+        "final_price": 3.99
+      },
+      {
+        "item_code": "1792879",
+        "item_name": "POM JUICE",
+        "price": 10.39,
+        "discount": 0.0,
+        "final_price": 10.39
+      },
+      {
+        "item_code": "1491866",
+        "item_name": "PUMPKIN",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "21020",
+        "item_name": "VINE TOMATO",
+        "price": 7.99,
+        "discount": 0.0,
+        "final_price": 7.99
+      },
+      {
+        "item_code": "512599",
+        "item_name": "**KS TOWEL**",
+        "price": 20.49,
+        "discount": 0.0,
+        "final_price": 20.49
+      },
+      {
+        "item_code": "1617506",
+        "item_name": "KS ORG CSHW",
+        "price": 14.89,
+        "discount": 0.0,
+        "final_price": 14.89
+      },
+      {
+        "item_code": "782796",
+        "item_name": "***KSWTR40PK",
+        "price": 3.99,
+        "discount": 0.0,
+        "final_price": 3.99
+      }
+    ],
+    "subtotal": 71.73,
+    "tax": 1.23,
+    "total": 72.96,
+    "calculated_subtotal": 71.73,
+    "calculated_total": 72.96000000000001,
+    "total_discounts": 0.0,
+    "subtotal_valid": true,
+    "total_valid": true,
+    "receipt_date": "06/18/2025"
   }
 ]
