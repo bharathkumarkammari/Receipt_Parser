@@ -277,8 +277,7 @@ def parse_costco_receipt(text):
 def index():
     """Main page showing upload form and receipt history"""
     receipts_data = load_receipts_data()
-    tableau_url = "https://public.tableau.com/views/ReceiptDashboard/Dashboard?:showVizHome=no&:embed=true"
-    return render_template('index.html', receipts=receipts_data, tableau_url=tableau_url)
+    return render_template('index.html', receipts=receipts_data)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():

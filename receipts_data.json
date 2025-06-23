@@ -447,9 +447,74 @@
     "receipt_date": "01/13/2025"
   },
   {
-    "id": 4,
+    "id": 5,
+    "filename": "Costco receipt 18-06-25.pdf",
+    "upload_date": "2025-06-19T18:38:10.217544",
+    "items": [
+      {
+        "item_code": "7812",
+        "item_name": "YELLOW",
+        "price": 3.99,
+        "discount": 0.0,
+        "final_price": 3.99
+      },
+      {
+        "item_code": "1792879",
+        "item_name": "POM JUICE",
+        "price": 10.39,
+        "discount": 0.0,
+        "final_price": 10.39
+      },
+      {
+        "item_code": "1491866",
+        "item_name": "PUMPKIN",
+        "price": 9.99,
+        "discount": 0.0,
+        "final_price": 9.99
+      },
+      {
+        "item_code": "21020",
+        "item_name": "VINE TOMATO",
+        "price": 7.99,
+        "discount": 0.0,
+        "final_price": 7.99
+      },
+      {
+        "item_code": "512599",
+        "item_name": "**KS TOWEL**",
+        "price": 20.49,
+        "discount": 0.0,
+        "final_price": 20.49
+      },
+      {
+        "item_code": "1617506",
+        "item_name": "KS ORG CSHW",
+        "price": 14.89,
+        "discount": 0.0,
+        "final_price": 14.89
+      },
+      {
+        "item_code": "782796",
+        "item_name": "***KSWTR40PK",
+        "price": 3.99,
+        "discount": 0.0,
+        "final_price": 3.99
+      }
+    ],
+    "subtotal": 71.73,
+    "tax": 1.23,
+    "total": 72.96,
+    "calculated_subtotal": 71.73,
+    "calculated_total": 72.96000000000001,
+    "total_discounts": 0.0,
+    "subtotal_valid": true,
+    "total_valid": true,
+    "receipt_date": "06/18/2025"
+  },
+  {
+    "id": 5,
     "filename": "Costco Receipt 11-30-2024.pdf",
-    "upload_date": "2025-06-19T18:13:13.511559",
+    "upload_date": "2025-06-23T14:02:53.444919",
     "items": [
       {
         "item_code": "1234275",
@@ -678,70 +743,5 @@
     "subtotal_valid": true,
     "total_valid": true,
     "receipt_date": "11/30/2024"
-  },
-  {
-    "id": 5,
-    "filename": "Costco receipt 18-06-25.pdf",
-    "upload_date": "2025-06-19T18:38:10.217544",
-    "items": [
-      {
-        "item_code": "7812",
-        "item_name": "YELLOW",
-        "price": 3.99,
-        "discount": 0.0,
-        "final_price": 3.99
-      },
-      {
-        "item_code": "1792879",
-        "item_name": "POM JUICE",
-        "price": 10.39,
-        "discount": 0.0,
-        "final_price": 10.39
-      },
-      {
-        "item_code": "1491866",
-        "item_name": "PUMPKIN",
-        "price": 9.99,
-        "discount": 0.0,
-        "final_price": 9.99
-      },
-      {
-        "item_code": "21020",
-        "item_name": "VINE TOMATO",
-        "price": 7.99,
-        "discount": 0.0,
-        "final_price": 7.99
-      },
-      {
-        "item_code": "512599",
-        "item_name": "**KS TOWEL**",
-        "price": 20.49,
-        "discount": 0.0,
-        "final_price": 20.49
-      },
-      {
-        "item_code": "1617506",
-        "item_name": "KS ORG CSHW",
-        "price": 14.89,
-        "discount": 0.0,
-        "final_price": 14.89
-      },
-      {
-        "item_code": "782796",
-        "item_name": "***KSWTR40PK",
-        "price": 3.99,
-        "discount": 0.0,
-        "final_price": 3.99
-      }
-    ],
-    "subtotal": 71.73,
-    "tax": 1.23,
-    "total": 72.96,
-    "calculated_subtotal": 71.73,
-    "calculated_total": 72.96000000000001,
-    "total_discounts": 0.0,
-    "subtotal_valid": true,
-    "total_valid": true,
-    "receipt_date": "06/18/2025"
   }
 ]

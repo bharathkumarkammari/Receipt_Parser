@@ -271,36 +271,22 @@
                 </div>
             </div>
 
-            <!-- Right Panel - Tableau Dashboard -->
+            <!-- Right Panel - Power BI Dashboard -->
             <div class="col-md-6 right-panel">
                 <div class="dashboard-container" id="vizContainer">
-                    <!-- Tableau dashboard will be loaded here -->
+                    <iframe 
+                        title="ReceiptViz"
+                        width="100%" 
+                        height="100%" 
+                        src="https://app.powerbi.com/reportEmbed?reportId=3dcca90c-0554-4007-aee3-1bc538670f1a&autoAuth=true&embeddedDemo=true"
+                        frameborder="0" 
+                        allowFullScreen="true">
+                    </iframe>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="https://public.tableau.com/javascripts/api/tableau-2.min.js"></script>
-    <script>
-        function initViz() {
-            var containerDiv = document.getElementById("vizContainer");
-            var url = "{{ tableau_url }}";
-            var options = {
-                hideTabs: true,
-                hideToolbar: true,
-                width: "100%",
-                height: "100%",
-                onFirstInteractive: function () {
-                    console.log("Dashboard is interactive and ready");
-                }
-            };
-            // Create the viz
-            var viz = new tableau.Viz(containerDiv, url, options);
-        }
-
-        // Initialize the visualization when the page loads
-        document.addEventListener("DOMContentLoaded", initViz);
-    </script>
 </body>
 </html>
