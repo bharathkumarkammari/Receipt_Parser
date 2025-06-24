@@ -6,10 +6,17 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 import pdfplumber
 from werkzeug.utils import secure_filename
-import gspread
-from google.oauth2.service_account import Credentials
 from PIL import Image
 import pytesseract
+from supabase import create_client, Client
+from dotenv import load_dotenv
+import requests
+from msal import ConfidentialClientApplication
+import gspread
+from google.oauth2.service_account import Credentials
+
+# Load environment variables from .env (for local development)
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -21,6 +28,16 @@ app.secret_key = os.environ.get("SESSION_SECRET", "fallback_secret_key_for_devel
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 DATA_FILE = 'receipts_data.json'
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+POWER_AUTOMATE_FLOW_URL = os.environ.get('POWER_AUTOMATE_FLOW_URL')
+
+# Check for missing Supabase credentials
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise Exception("Supabase credentials not set. Check your .env file or environment variables.")
+
+# Create Supabase client once
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Create upload directory if it doesn't exist
 if not os.path.exists(UPLOAD_FOLDER):
@@ -28,6 +45,25 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 # Set tesseract_cmd if needed (update the path if your tesseract is elsewhere)
 pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
+
+TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
+WORKSPACE_ID = os.environ.get("POWERBI_WORKSPACE_ID")
+DATASET_ID = os.environ.get("POWERBI_DATASET_ID")
+
+SCOPES = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
+SERVICE_ACCOUNT_FILE = 'service_account.json'
+SHEET_NAME = 'Costco_Input'
+WORKSHEET_NAME = 'Sheet1'
+creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+gc = gspread.authorize(creds)
+sheet = gc.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+
+REFRESH_LIMIT = 8  # Change to 48 for Premium workspaces
 
 def allowed_file(filename):
     """Check if file has allowed extension"""
@@ -273,11 +309,37 @@ def parse_costco_receipt(text):
         logging.error(f"Error parsing receipt: {e}")
         return None
 
+def get_refreshes_remaining():
+    access_token = get_access_token()
+    url = f"https://api.powerbi.com/v1.0/myorg/groups/{WORKSPACE_ID}/datasets/{DATASET_ID}/refreshes"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        data = response.json()
+        from datetime import datetime, timedelta
+        now = datetime.utcnow()
+        count = 0
+        for refresh in data.get('value', []):
+            if 'startTime' in refresh:
+                try:
+                    start_time = datetime.strptime(refresh['startTime'], '%Y-%m-%dT%H:%M:%S.%fZ')
+                except ValueError:
+                    start_time = datetime.strptime(refresh['startTime'], '%Y-%m-%dT%H:%M:%SZ')
+                if (now - start_time) <= timedelta(hours=24):
+                    count += 1
+        remaining = max(0, REFRESH_LIMIT - count)
+        return remaining
+    return 0
+
 @app.route('/')
 def index():
     """Main page showing upload form and receipt history"""
     receipts_data = load_receipts_data()
-    return render_template('index.html', receipts=receipts_data)
+    refreshes_remaining = get_refreshes_remaining()
+    return render_template('index.html', receipts=receipts_data, refreshes_remaining=refreshes_remaining)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -378,7 +440,7 @@ def clear_data():
 
 @app.route('/upload_to_gsheet', methods=['POST'])
 def upload_to_gsheet():
-    """Upload the latest parsed receipt to Google Sheets, including date column"""
+    """Upload the latest parsed receipt to Google Sheets"""
     try:
         receipts_data = load_receipts_data()
         if not receipts_data:
@@ -386,31 +448,23 @@ def upload_to_gsheet():
             return redirect(url_for('index'))
         latest = receipts_data[-1]
         items = latest.get('items', [])
-        # Google Sheets setup
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds = Credentials.from_service_account_file('service_account.json', scopes=scope)
-        client = gspread.authorize(creds)
-        # Open the sheet (replace with your sheet name)
-        sheet = client.open("Costco_Input").sheet1
-        # Add 'Date' to header if not present
-        header = ["Item Code", "Item Name", "Price", "Discount", "Final Price", "Date"]
-        if len(sheet.get_all_values()) == 0:
-            sheet.append_row(header)
-        # For each item, add a row with the date
+        receipt_date = latest.get('receipt_date', '')
+        # Prepare rows for Google Sheets
+        rows = []
         for item in items:
-            row = [
-                item['item_code'],
-                item['item_name'],
-                item['price'],
+            rows.append([
+                item.get('item_code', ''),
+                item.get('item_name', ''),
+                item.get('price', ''),
                 item.get('discount', ''),
                 item.get('final_price', ''),
-                latest.get('receipt_date')
-            ]
-            sheet.append_row(row)
-        flash('Latest receipt uploaded to Google Sheets!', 'success')
+                receipt_date
+            ])
+        # Append rows to the sheet
+        sheet.append_rows(rows, value_input_option='USER_ENTERED')
+        flash('Latest receipt uploaded to Google Sheet successfully!', 'success')
     except Exception as e:
-        logging.error(f"Error uploading to Google Sheets: {e}")
-        flash('Failed to upload to Google Sheets. Check server logs and credentials.', 'error')
+        flash(f'Failed to upload to Google Sheet: {e}', 'error')
     return redirect(url_for('index'))
 
 @app.route('/delete_receipt/<receipt_id>', methods=['POST'])
@@ -429,6 +483,46 @@ def delete_receipt(receipt_id):
     except Exception as e:
         logging.error(f"Error deleting receipt: {e}")
         flash('Error deleting receipt', 'error')
+    return redirect(url_for('index'))
+
+def get_access_token():
+    authority = f"https://login.microsoftonline.com/{TENANT_ID}"
+    app = ConfidentialClientApplication(
+        CLIENT_ID,
+        authority=authority,
+        client_credential=CLIENT_SECRET
+    )
+    scopes = ["https://analysis.windows.net/powerbi/api/.default"]
+    result = app.acquire_token_for_client(scopes=scopes)
+    if "access_token" in result:
+        return result["access_token"]
+    else:
+        raise Exception(f"Could not obtain access token: {result}")
+
+def trigger_powerbi_refresh():
+    access_token = get_access_token()
+    url = f"https://api.powerbi.com/v1.0/myorg/groups/{WORKSPACE_ID}/datasets/{DATASET_ID}/refreshes"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    response = requests.post(url, headers=headers)
+    if response.status_code == 202:
+        return "Refresh triggered successfully!"
+    elif response.status_code == 429:
+        # Power BI does not provide remaining refreshes in the response
+        # Show a user-friendly message
+        return "Limit usage is over for the day. You have reached the maximum number of refreshes allowed in 24 hours. (Pro: 8/day, Premium: 48/day). Check your Power BI refresh history for details."
+    else:
+        return f"Failed to trigger refresh: {response.status_code} {response.text}"
+
+@app.route('/refresh_powerbi', methods=['POST'])
+def refresh_powerbi():
+    try:
+        result = trigger_powerbi_refresh()
+        flash(result, 'success' if 'successfully' in result else 'error')
+    except Exception as e:
+        flash(str(e), 'error')
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
