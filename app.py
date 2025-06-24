@@ -8,15 +8,10 @@ import pdfplumber
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
-from supabase import create_client, Client
-from dotenv import load_dotenv
-import requests
-from msal import ConfidentialClientApplication
 import gspread
 from google.oauth2.service_account import Credentials
-
-# Load environment variables from .env (for local development)
-load_dotenv()
+import requests
+from msal import ConfidentialClientApplication
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -28,40 +23,22 @@ app.secret_key = os.environ.get("SESSION_SECRET", "fallback_secret_key_for_devel
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 DATA_FILE = 'receipts_data.json'
-SUPABASE_URL = os.environ.get('SUPABASE_URL')
-SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
-POWER_AUTOMATE_FLOW_URL = os.environ.get('POWER_AUTOMATE_FLOW_URL')
 
-# Check for missing Supabase credentials
-if not SUPABASE_URL or not SUPABASE_KEY:
-    raise Exception("Supabase credentials not set. Check your .env file or environment variables.")
-
-# Create Supabase client once
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-# Create upload directory if it doesn't exist
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-# Set tesseract_cmd if needed (update the path if your tesseract is elsewhere)
-pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
-
-TENANT_ID = os.environ.get("AZURE_TENANT_ID")
-CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
-WORKSPACE_ID = os.environ.get("POWERBI_WORKSPACE_ID")
-DATASET_ID = os.environ.get("POWERBI_DATASET_ID")
-
-SCOPES = [
-    'https://www.googleapis.com/auth/spreadsheets',
-    'https://www.googleapis.com/auth/drive'
-]
+# Google Sheets setup
+SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 SERVICE_ACCOUNT_FILE = 'service_account.json'
 SHEET_NAME = 'Costco_Input'
 WORKSHEET_NAME = 'Sheet1'
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 gc = gspread.authorize(creds)
 sheet = gc.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+
+# Power BI/REST API config (from Render env vars)
+TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
+WORKSPACE_ID = os.environ.get("POWERBI_WORKSPACE_ID")
+DATASET_ID = os.environ.get("POWERBI_DATASET_ID")
 
 REFRESH_LIMIT = 8  # Change to 48 for Premium workspaces
 
