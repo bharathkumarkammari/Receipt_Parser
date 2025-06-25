@@ -29,6 +29,8 @@ It features a beautiful dashboard powered by **Power BI**, giving you real-time 
 
 👉 **Try it now:** [https://receiptviz.onrender.com](https://receiptviz.onrender.com)
 
+<img width="1728" alt="ReceiptViz" src="https://github.com/user-attachments/assets/43026bce-7cb6-41b3-a09e-c8bcc57450fc" />
+
 ---
 
 ## 📊 Power BI Integration
