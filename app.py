@@ -9,15 +9,15 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
 from supabase import create_client, Client
-#from dotenv import load_dotenv
+# from dotenv import load_dotenv  # Commented out for deployment
 import requests
 from msal import ConfidentialClientApplication
 import gspread
-#from google.oauth2.service_account import Credentials
+from google.oauth2.service_account import Credentials
 import uuid
 
 # Load environment variables from .env (for local development)
-#load_dotenv()
+# load_dotenv()  # Commented out for deployment
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -36,7 +36,7 @@ POWERBI_PUBLIC_EMBED_URL = os.environ.get("POWERBI_PUBLIC_EMBED_URL", "")
 
 # Check for missing Supabase credentials
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise Exception("Supabase credentials not set. Check your .env file or environment variables.")
+    raise Exception("Supabase credentials not set. Check your environment variables.")
 
 # Create Supabase client once
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -58,12 +58,41 @@ SCOPES = [
     'https://www.googleapis.com/auth/spreadsheets',
     'https://www.googleapis.com/auth/drive'
 ]
-SERVICE_ACCOUNT_FILE = 'service_account.json'
-SHEET_NAME = 'Costco_Input'
-WORKSHEET_NAME = 'Sheet1'
-creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
-gc = gspread.authorize(creds)
-sheet = gc.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+
+# Google Sheets configuration - use environment variables for deployment
+SHEET_NAME = os.environ.get('GOOGLE_SHEET_NAME', 'Costco_Input')
+WORKSHEET_NAME = os.environ.get('GOOGLE_WORKSHEET_NAME', 'Sheet1')
+
+# Initialize Google Sheets client using environment variables
+def get_google_sheets_client():
+    """Get Google Sheets client using environment variables or service account file"""
+    try:
+        # Check if service account JSON is provided as environment variable (for deployment)
+        service_account_json = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON')
+        if service_account_json:
+            # Parse the JSON string from environment variable
+            service_account_info = json.loads(service_account_json)
+            creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+        else:
+            # Fallback to service account file (for local development)
+            service_account_file = 'service_account.json'
+            if os.path.exists(service_account_file):
+                creds = Credentials.from_service_account_file(service_account_file, scopes=SCOPES)
+            else:
+                raise Exception("No Google service account credentials found. Set GOOGLE_SERVICE_ACCOUNT_JSON environment variable or provide service_account.json file.")
+        
+        gc = gspread.authorize(creds)
+        return gc.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
+    except Exception as e:
+        logging.error(f"Error initializing Google Sheets client: {e}")
+        raise
+
+# Initialize sheet variable
+try:
+    sheet = get_google_sheets_client()
+except Exception as e:
+    logging.error(f"Failed to initialize Google Sheets: {e}")
+    sheet = None
 
 REFRESH_LIMIT = 8  # Change to 48 for Premium workspaces
 
@@ -339,6 +368,10 @@ def get_refreshes_remaining():
 def load_receipts_from_gsheet():
     """Load all receipts from Google Sheets and group by RECEIPT_ID."""
     try:
+        if sheet is None:
+            logging.warning("Google Sheets not configured. Returning empty list.")
+            return []
+            
         records = sheet.get_all_records()
         # Group items by RECEIPT_ID
         receipts = {}
@@ -464,26 +497,29 @@ def upload_file():
             flash(f'Receipt processed successfully! Found {len(parsed_data["items"])} items.', 'success')
             # Automatically upload to Google Sheet
             try:
-                latest = receipts_data[-1]
-                items = latest.get('items', [])
-                receipt_date = latest.get('receipt_date', '')
-                receipt_id = str(uuid.uuid4())
-                rows = []
-                for item in items:
-                    rows.append([
-                        receipt_id,
-                        item.get('item_code', ''),
-                        item.get('item_name', ''),
-                        item.get('price', ''),
-                        item.get('discount', ''),
-                        item.get('final_price', ''),
-                        receipt_date
-                    ])
-                header = ["RECEIPT_ID", "ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE", "DATE"]
-                if [h.strip().upper() for h in sheet.row_values(1)] != header:
-                    sheet.update('A1', [header])
-                sheet.append_rows(rows, value_input_option='USER_ENTERED')
-                flash('Latest receipt uploaded to Google Sheet successfully!', 'success')
+                if sheet is None:
+                    flash('Google Sheets not configured. Receipt saved locally only.', 'warning')
+                else:
+                    latest = receipts_data[-1]
+                    items = latest.get('items', [])
+                    receipt_date = latest.get('receipt_date', '')
+                    receipt_id = str(uuid.uuid4())
+                    rows = []
+                    for item in items:
+                        rows.append([
+                            receipt_id,
+                            item.get('item_code', ''),
+                            item.get('item_name', ''),
+                            item.get('price', ''),
+                            item.get('discount', ''),
+                            item.get('final_price', ''),
+                            receipt_date
+                        ])
+                    header = ["RECEIPT_ID", "ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE", "DATE"]
+                    if [h.strip().upper() for h in sheet.row_values(1)] != header:
+                        sheet.update('A1', [header])
+                    sheet.append_rows(rows, value_input_option='USER_ENTERED')
+                    flash('Latest receipt uploaded to Google Sheet successfully!', 'success')
             except Exception as e:
                 flash(f'Failed to upload to Google Sheet: {e}', 'error')
         else:
@@ -518,6 +554,10 @@ def clear_data():
 def upload_to_gsheet():
     """Upload the latest parsed receipt to Google Sheets, with a unique RECEIPT_ID for each receipt."""
     try:
+        if sheet is None:
+            flash('Google Sheets not configured. Please check your environment variables.', 'error')
+            return redirect(url_for('index'))
+            
         receipts_data = load_receipts_data()
         if not receipts_data:
             flash('No receipts to upload.', 'error')
