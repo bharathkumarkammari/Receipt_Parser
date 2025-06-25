@@ -1,78 +1,117 @@
-# ReceiptViz 🧾 – Costco Receipt Parser & Visualizer
+# ReceiptViz 🧾 – Costco Receipt Parser & Analytics Dashboard
 
-A smart web application that extracts items, discounts, and tax details from Costco PDF receipts, then transforms them into structured data and visuals. Perfect for personal expense tracking and dashboarding.
-
-🔗 **Live App**: [https://receiptviz.onrender.com](https://receiptviz.onrender.com)  
-📂 **GitHub Repo**: [Receipt_Parser (receipt_parse branch)](https://github.com/bharathkumarkammari/Receipt_Parser/tree/receipt_parse)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Visit-green?style=for-the-badge)](https://receiptviz.onrender.com)
+[![Portfolio](https://img.shields.io/badge/Author-Portfolio-blue?style=for-the-badge)](https://bharathkumarkammari.com)
 
 ---
 
-## 🔍 Features
+## 🚀 What is ReceiptViz?
 
-- Upload your **Costco PDF receipt**
-- Automatically extracts:
-  - 🛒 Item names
-  - 💸 Discounts
-  - 🧾 Taxes
-  - 🗓️ Purchase date
-- Detects and links discounts even if they’re on a different line
-- Outputs:
-  - Cleaned structured data
-  - Preprocessed summary
-  - Optional download of results
-- Ready to connect to Tableau or Google Sheets for dashboards
+**ReceiptViz** is a smart web application that lets you upload your Costco receipts (PDF or image), automatically extracts all items, discounts, and totals, and syncs your purchase history to Google Sheets.  
+It features a beautiful dashboard powered by **Power BI**, giving you real-time analytics on your spending, savings, and itemized history.
 
 ---
 
-## ⚙️ Tech Stack
+## ✨ Features
+
+- **Upload Costco Receipts** (PDF, JPG, PNG)
+- **Automatic Parsing**: Extracts item names, prices, discounts, and dates
+- **Google Sheets Sync**: All data is stored and updated live in your Google Sheet
+- **Power BI Dashboard**: Embedded analytics dashboard for instant insights
+- **Real-Time Data**: Dashboard refreshes up to **8 times/day** (free Power BI account limit)
+- **Accordion Receipt History**: Visual, expandable list of all your receipts
+- **Validation**: Green checkmark if items match the receipt total
+- **Modern UI**: Responsive, dark-themed, and mobile-friendly
+
+---
+
+## 🖥️ Live Demo
+
+👉 **Try it now:** [https://receiptviz.onrender.com](https://receiptviz.onrender.com)
+
+---
+
+## 📊 Power BI Integration
+
+- The dashboard is embedded using Power BI's **Publish to Web** feature.
+- **Real-time data**: The dashboard fetches the latest data from Google Sheets every time you refresh (up to 8 times/day for free accounts, 48 for Premium).
+- **No login required**: Anyone can view the analytics instantly.
+
+---
+
+## 🛠️ Tech Stack
 
 - **Backend**: Python, Flask
-- **Frontend**: HTML/CSS, Bootstrap, JavaScript
-- **PDF Parsing**: `pdfplumber`, `pdfminer.six`
+- **Frontend**: HTML, Bootstrap, JavaScript
+- **PDF/Image Parsing**: pdfplumber, pytesseract
+- **Data Store**: Google Sheets (via Service Account)
+- **Analytics**: Power BI (embedded)
 - **Hosting**: Render.com
 
 ---
 
-## 📂 File Structure
+## 📂 Project Structure
 
 ```
 Receipt_Parser/
-├── app.py                 # Core Flask app
-├── main.py                # Upload and route manager
-├── tableau_api.py         # (Optional) for Tableau extensions
-├── templates/             # HTML templates
-├── static/                # CSS and JS
-├── uploads/               # Uploaded receipts
-├── receipts_data.json     # Parsed receipt storage
-├── requirements.txt
-└── render.yaml            # Render deployment config
+├── app.py                 # Main Flask app
+├── main.py                # Entrypoint for deployment
+├── templates/             # HTML templates (Jinja2)
+├── static/                # CSS, JS, and assets
+├── uploads/               # Uploaded receipts (temp)
+├── receipts_data.json     # Local cache (optional)
+├── requirements.txt       # Python dependencies
+├── render.yaml            # Render deployment config
+├── DEPLOYMENT_NOTES.md    # Deployment & environment setup
+└── README.md
 ```
 
 ---
 
-## 🚀 How to Deploy (Render)
+## ⚡ How It Works
 
-1. Connect this repo to [Render.com](https://render.com)
-2. Add `render.yaml` and set:
-   ```yaml
-   startCommand: gunicorn main:app
-   ```
-3. App will be live at:
-   ```
-   https://yourname.onrender.com
-   ```
+1. **Upload** your Costco receipt (PDF or image)
+2. The app **extracts** all items, discounts, and totals
+3. Data is **synced to Google Sheets** (your source of truth)
+4. The **Power BI dashboard** fetches the latest data from Google Sheets
+5. View your **analytics** and **receipt history** instantly
 
 ---
 
-## ✅ Future Ideas
+## 📝 Setup & Deployment
 
-- Auto-categorize expenses (e.g., grocery, electronics)
-- Monthly or weekly spending summary
-- Connect to Google Sheets / Airtable
-- Dashboard export as PDF or image
+See [`DEPLOYMENT_NOTES.md`](./DEPLOYMENT_NOTES.md) for full instructions.
+
+**Key steps:**
+- Set up a Google Cloud Service Account and share your Google Sheet
+- Set all required environment variables (see deployment notes)
+- Deploy to [Render.com](https://render.com) or your preferred cloud
 
 ---
 
-## 📝 License
+## 🔒 Security & Privacy
 
-Free for personal and demo use. Created by [bharathkumarkammari.com](https://bharathkumarkammari.com)
+- Your receipts are processed in-memory and synced to your private Google Sheet
+- No data is stored on the server after upload
+- Service account credentials are never committed to the repo
+
+---
+
+## 💡 Customization Ideas
+
+- Add category auto-tagging for items
+- Export analytics as PDF or image
+- Connect to other BI tools (Tableau, Power BI Premium, etc.)
+
+---
+
+## 👤 Author
+
+Made with ❤️ by [Bharath Kumar Kammari](https://bharathkumarkammari.com)
+
+---
+
+## 📢 License
+
+Free for personal and demo use.  
+For commercial or enterprise use, please contact the author.
