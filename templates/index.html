@@ -19,7 +19,7 @@
             padding: 20px;
         }
         .dashboard-container {
-            height: 70vh;
+            height: 90vh;
             min-height: 400px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
@@ -71,184 +71,132 @@
                     </div>
                     <div class="card-body">
                         <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data" id="uploadForm">
-                            <div class="row">
-                                <div class="col-md-8">
-                                    <div class="mb-3">
-                                        <label for="file" class="form-label">Select PDF File</label>
-                                        <input type="file" class="form-control" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required>
-                                        <div class="form-text">Only PDF files are accepted</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="mb-3">
-                                        <label class="form-label">&nbsp;</label>
-                                        <div class="d-grid">
-                                            <button type="submit" class="btn btn-primary" id="uploadBtn">
-                                                <i class="fas fa-cloud-upload-alt me-2"></i>
-                                                Upload & Parse
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="d-flex flex-row align-items-center gap-2 flex-wrap">
+                                <label for="file" class="visually-hidden">Select PDF File</label>
+                                <input type="file" class="form-control h-100" id="file" name="file" accept=".pdf,.jpg,.jpeg,.png" required style="min-width: 270px; max-width: 370px; min-height: 38px;">
+                                <button type="submit" class="btn btn-primary" id="uploadBtn" style="min-width: 150px; min-height: 38px;">
+                                    <i class="fas fa-cloud-upload-alt me-2"></i>
+                                    Upload to Google Sheet
+                                </button>
                             </div>
+                            <div class="form-text mt-1">Only PDF files are accepted</div>
                         </form>
                     </div>
                 </div>
 
-                <!-- Receipt History -->
+                <!-- Flashed messages (moved from right to left panel) -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    <div class="mt-2">
+                      {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                          {{ message }}
+                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endwith %}
+
+                <!-- Accordion display of all receipts/items from Google Sheets -->
+                {% if receipts %}
+                <!-- Summary Cards -->
+                <div class="row g-0 p-3">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                            <h3 class="mb-0">{{ receipts|selectattr('items')|map(attribute='items')|map('length')|sum }}</h3>
+                            <p class="text-muted mb-0">Total Items</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                            <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='total')|select|sum) }}</h3>
+                            <p class="text-muted mb-0">Total Spent</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <i class="fas fa-tag fa-2x text-warning mb-2"></i>
+                            <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='items')|map('map', attribute='discount')|map('sum')|sum) }}</h3>
+                            <p class="text-muted mb-0">Total Savings</p>
+                        </div>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
                             <i class="fas fa-history me-2"></i>
                             Receipt History
-                            {% if receipts %}
-                                <span class="badge bg-secondary ms-2">{{ receipts|length }} receipt{{ 's' if receipts|length != 1 else '' }}</span>
-                            {% endif %}
+                            <span class="badge bg-secondary ms-2">{{ receipts|length }} receipt{{ 's' if receipts|length != 1 else '' }}</span>
                         </h5>
-                        <div>
-                            {% if receipts %}
-                                <form action="{{ url_for('upload_to_gsheet') }}" method="post" style="display: inline;">
-                                    <button type="submit" class="btn btn-outline-success btn-sm">
-                                        <i class="fas fa-upload me-1"></i>
-                                        Upload Latest to Google Sheet
-                                    </button>
-                                </form>
-                                <form action="{{ url_for('clear_data') }}" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to clear all receipt data?');">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm">
-                                        <i class="fas fa-trash me-1"></i>
-                                        Clear All
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
                     </div>
                     <div class="card-body p-0">
-                        <!-- Summary Cards -->
-                        <div class="row g-0 p-3">
-                            <div class="col-md-4">
-                                <div class="text-center p-3">
-                                    <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
-                                    <h3 class="mb-0">{{ receipts|selectattr('items')|map(attribute='items')|map('length')|sum }}</h3>
-                                    <p class="text-muted mb-0">Total Items</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center p-3">
-                                    <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
-                                    <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='total')|select|sum) }}</h3>
-                                    <p class="text-muted mb-0">Total Spent</p>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="text-center p-3">
-                                    <i class="fas fa-tag fa-2x text-warning mb-2"></i>
-                                    <h3 class="mb-0">${{ "%.2f"|format(receipts|map(attribute='items')|map('map', attribute='discount')|map('sum')|sum) }}</h3>
-                                    <p class="text-muted mb-0">Total Savings</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Receipt Accordion -->
                         <div class="accordion" id="receiptsAccordion">
                             {% for receipt in receipts|reverse %}
                                 <div class="accordion-item">
                                     <div class="d-flex justify-content-between align-items-center p-3">
-                                        <div class="d-flex align-items-center">
-                                            <form action="{{ url_for('delete_receipt', receipt_id=receipt.id) }}" method="post" class="me-3" onsubmit="return confirm('Are you sure you want to delete this receipt?');">
-                                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Receipt">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                            <div>
-                                                <strong>{{ receipt.filename }}</strong>
-                                                <div class="text-muted small">
-                                                    <i class="fas fa-calendar me-1"></i>
-                                                    {{ receipt.upload_date[:10] }}
-                                                    {% if receipt.receipt_date %}
-                                                        <span class="ms-2"><i class="fas fa-clock me-1"></i>Date on Receipt: <strong>{{ receipt.receipt_date }}</strong></span>
-                                                    {% endif %}
-                                                    <i class="fas fa-shopping-bag ms-3 me-1"></i>
-                                                    {{ receipt.get('items')|length if receipt.get('items') else 0 }} items
-                                                </div>
-                                            </div>
+                                        <div>
+                                            <strong>Receipt Date: {{ receipt.receipt_date }}</strong>
+                                            <span class="text-muted small ms-2">{{ receipt['items']|length }} items</span>
                                         </div>
                                         <div class="d-flex align-items-center">
-                                            {% if receipt.total %}
-                                                <span class="text-success h5 mb-0">${{ "%.2f"|format(receipt.total) }}</span>
-                                            {% endif %}
-                                            <button class="btn btn-link ms-3 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ receipt.id }}" aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ receipt.id }}">
+                                            <span class="text-success h5 mb-0">${{ "%.2f"|format(receipt.total) }}</span>
+                                            <span class="ms-2">
+                                                {% if receipt.subtotal_valid or receipt.total_valid %}
+                                                    <i class="fas fa-check-circle text-success" title="Validated: Items match total"></i>
+                                                {% else %}
+                                                    <i class="fas fa-times-circle text-danger" title="Warning: Items do not match total"></i>
+                                                {% endif %}
+                                            </span>
+                                            <button class="btn btn-link ms-3 p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" aria-expanded="{% if loop.last %}true{% else %}false{% endif %}" aria-controls="collapse{{ loop.index }}">
                                                 <i class="fas fa-chevron-down"></i>
                                             </button>
                                         </div>
                                     </div>
-                                    <div id="collapse{{ receipt.id }}" class="collapse {% if loop.first %}show{% endif %}" data-bs-parent="#receiptsAccordion">
+                                    <div id="collapse{{ loop.index }}" class="collapse {% if loop.last %}show{% endif %}" data-bs-parent="#receiptsAccordion">
                                         <div class="p-3 border-top">
-                                            {% if receipt.get('items') %}
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Item Code</th>
-                                                                <th>Item Name</th>
-                                                                <th class="text-end">Price</th>
-                                                                <th class="text-end">Discount</th>
-                                                                <th class="text-end">Final Price</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody>
-                                                            {% for item in receipt.get('items', []) %}
-                                                                <tr>
-                                                                    <td class="font-monospace">{{ item.item_code }}</td>
-                                                                    <td>{{ item.item_name }}</td>
-                                                                    <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
-                                                                    <td class="text-end">
-                                                                        {% if item.discount > 0 %}
-                                                                            <span class="text-success">-${{ "%.2f"|format(item.discount) }}</span>
-                                                                        {% else %}
-                                                                            <span class="text-muted">-</span>
-                                                                        {% endif %}
-                                                                    </td>
-                                                                    <td class="text-end">
-                                                                        <strong>${{ "%.2f"|format(item.price - item.discount) }}</strong>
-                                                                    </td>
-                                                                </tr>
-                                                            {% endfor %}
-                                                        </tbody>
-                                                        <tfoot class="border-top">
-                                                            <tr>
-                                                                <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
-                                                                <td class="text-end">
-                                                                    <strong>${{ "%.2f"|format(receipt.get('subtotal', 0)) }}</strong>
-                                                                    {% if receipt.get('subtotal_valid') is not none %}
-                                                                        {% if receipt.get('subtotal_valid') %}
-                                                                            <i class="fas fa-check-circle text-success ms-2" title="Validated: Sum of items matches subtotal"></i>
-                                                                        {% else %}
-                                                                            <i class="fas fa-exclamation-circle text-warning ms-2" title="Warning: Sum of items ({{ "%.2f"|format(receipt.get('calculated_subtotal', 0)) }}) doesn't match subtotal"></i>
-                                                                        {% endif %}
-                                                                    {% endif %}
-                                                                </td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td colspan="4" class="text-end"><strong>Tax:</strong></td>
-                                                                <td class="text-end"><strong>${{ "%.2f"|format(receipt.get('tax', 0)) }}</strong></td>
-                                                            </tr>
-                                                            <tr>
-                                                                <td colspan="4" class="text-end"><strong>Total:</strong></td>
-                                                                <td class="text-end">
-                                                                    <strong class="text-success">${{ "%.2f"|format(receipt.total) }}</strong>
-                                                                    {% if receipt.get('total_valid') is not none %}
-                                                                        {% if receipt.get('total_valid') %}
-                                                                            <i class="fas fa-check-circle text-success ms-2" title="Validated: Subtotal + tax matches total"></i>
-                                                                        {% else %}
-                                                                            <i class="fas fa-exclamation-circle text-warning ms-2" title="Warning: Calculated total ({{ "%.2f"|format(receipt.get('calculated_total', 0)) }}) doesn't match receipt total"></i>
-                                                                        {% endif %}
-                                                                    {% endif %}
-                                                                </td>
-                                                            </tr>
-                                                        </tfoot>
-                                                    </table>
-                                                </div>
-                                            {% endif %}
+                                            <div class="table-responsive">
+                                                <table class="table table-sm">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Item Code</th>
+                                                            <th>Item Name</th>
+                                                            <th class="text-end">Price</th>
+                                                            <th class="text-end">Discount</th>
+                                                            <th class="text-end">Final Price</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for item in receipt['items'] %}
+                                                        <tr>
+                                                            <td class="font-monospace">{{ item.item_code }}</td>
+                                                            <td>{{ item.item_name }}</td>
+                                                            <td class="text-end">${{ "%.2f"|format(item.price) }}</td>
+                                                            <td class="text-end">
+                                                                {% if item.discount > 0 %}
+                                                                    <span class="text-success">-${{ "%.2f"|format(item.discount) }}</span>
+                                                                {% else %}
+                                                                    <span class="text-muted">-</span>
+                                                                {% endif %}
+                                                            </td>
+                                                            <td class="text-end"><strong>${{ "%.2f"|format(item.final_price) }}</strong></td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                    <tfoot class="border-top">
+                                                        <tr>
+                                                            <td colspan="4" class="text-end"><strong>Subtotal:</strong></td>
+                                                            <td class="text-end"><strong>${{ "%.2f"|format(receipt.get('subtotal', 0)) }}</strong></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td colspan="4" class="text-end"><strong>Total:</strong></td>
+                                                            <td class="text-end"><strong class="text-success">${{ "%.2f"|format(receipt.total) }}</strong></td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -256,6 +204,7 @@
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Right Panel - Power BI Dashboard -->
@@ -279,28 +228,14 @@
                         </div>
                     </div>
                 </div>
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    <div class="mt-2">
-                      {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                          {{ message }}
-                          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                      {% endfor %}
-                    </div>
-                  {% endif %}
-                {% endwith %}
                 <div class="dashboard-container mt-3" id="vizContainer">
                     <iframe 
-                        title="ReceiptViz"
+                        id="powerbiFrame"
                         width="100%" 
                         height="100%" 
-                        src="https://app.powerbi.com/reportEmbed?reportId=58b0f51d-954d-4d0a-ae8c-6d435bbba052&autoAuth=true&ctid=dbb2bec7-6de4-44c5-a3af-2ff4b1a4b4a7"
+                        src="{{ powerbi_public_embed_url }}" 
                         frameborder="0" 
-                        allowFullScreen="true"
-                        id="powerbiFrame"
-                        style="width:100%;height:100%;border:0;">
+                        allowFullScreen="true">
                     </iframe>
                 </div>
             </div>

@@ -8,10 +8,16 @@ import pdfplumber
 from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
-import gspread
-from google.oauth2.service_account import Credentials
+from supabase import create_client, Client
+from dotenv import load_dotenv
 import requests
 from msal import ConfidentialClientApplication
+import gspread
+from google.oauth2.service_account import Credentials
+import uuid
+
+# Load environment variables from .env (for local development)
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -23,22 +29,41 @@ app.secret_key = os.environ.get("SESSION_SECRET", "fallback_secret_key_for_devel
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png'}
 DATA_FILE = 'receipts_data.json'
+SUPABASE_URL = os.environ.get('SUPABASE_URL')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY')
+POWER_AUTOMATE_FLOW_URL = os.environ.get('POWER_AUTOMATE_FLOW_URL')
+POWERBI_PUBLIC_EMBED_URL = os.environ.get("POWERBI_PUBLIC_EMBED_URL", "")
 
-# Google Sheets setup
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+# Check for missing Supabase credentials
+if not SUPABASE_URL or not SUPABASE_KEY:
+    raise Exception("Supabase credentials not set. Check your .env file or environment variables.")
+
+# Create Supabase client once
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# Create upload directory if it doesn't exist
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+# Set tesseract_cmd if needed (update the path if your tesseract is elsewhere)
+pytesseract.pytesseract.tesseract_cmd = r'/usr/local/bin/tesseract'
+
+TENANT_ID = os.environ.get("AZURE_TENANT_ID")
+CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
+CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
+WORKSPACE_ID = os.environ.get("POWERBI_WORKSPACE_ID")
+DATASET_ID = os.environ.get("POWERBI_DATASET_ID")
+
+SCOPES = [
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/drive'
+]
 SERVICE_ACCOUNT_FILE = 'service_account.json'
 SHEET_NAME = 'Costco_Input'
 WORKSHEET_NAME = 'Sheet1'
 creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
 gc = gspread.authorize(creds)
 sheet = gc.open(SHEET_NAME).worksheet(WORKSHEET_NAME)
-
-# Power BI/REST API config (from Render env vars)
-TENANT_ID = os.environ.get("AZURE_TENANT_ID")
-CLIENT_ID = os.environ.get("AZURE_CLIENT_ID")
-CLIENT_SECRET = os.environ.get("AZURE_CLIENT_SECRET")
-WORKSPACE_ID = os.environ.get("POWERBI_WORKSPACE_ID")
-DATASET_ID = os.environ.get("POWERBI_DATASET_ID")
 
 REFRESH_LIMIT = 8  # Change to 48 for Premium workspaces
 
@@ -311,12 +336,62 @@ def get_refreshes_remaining():
         return remaining
     return 0
 
+def load_receipts_from_gsheet():
+    """Load all receipts from Google Sheets and group by RECEIPT_ID."""
+    try:
+        records = sheet.get_all_records()
+        # Group items by RECEIPT_ID
+        receipts = {}
+        for row in records:
+            receipt_id = row.get('RECEIPT_ID') or row.get('Receipt_ID') or row.get('receipt_id')
+            if not receipt_id:
+                continue
+            if receipt_id not in receipts:
+                receipts[receipt_id] = {
+                    'id': receipt_id,
+                    'filename': f"Receipt {row.get('DATE', '')}.pdf",
+                    'upload_date': row.get('DATE', ''),
+                    'items': [],
+                    'subtotal': 0,
+                    'tax': 0,
+                    'total': 0,
+                    'total_discounts': 0,
+                    'receipt_date': row.get('DATE', '')
+                }
+            item = {
+                'item_code': row.get('ITEM CODE', ''),
+                'item_name': row.get('ITEM NAME', ''),
+                'price': float(row.get('PRICE', 0) or 0),
+                'discount': float(row.get('DISCOUNT', 0) or 0),
+                'final_price': float(row.get('FINAL PRICE', 0) or 0),
+            }
+            receipts[receipt_id]['items'].append(item)
+            receipts[receipt_id]['subtotal'] += item['final_price']
+            receipts[receipt_id]['total_discounts'] += item['discount']
+        # Convert to list and add calculated fields
+        result = []
+        for i, (receipt_id, data) in enumerate(sorted(receipts.items(), key=lambda x: x[1]['upload_date'], reverse=True), 1):
+            data['id'] = receipt_id
+            # Validation: recalculate subtotal and check validity
+            calculated_subtotal = sum(item['final_price'] for item in data['items'])
+            subtotal = data.get('subtotal', calculated_subtotal)
+            subtotal_valid = abs(calculated_subtotal - subtotal) < 0.01
+            data['subtotal'] = calculated_subtotal
+            data['subtotal_valid'] = subtotal_valid
+            data['total_valid'] = subtotal_valid  # If you don't have tax, treat as same
+            data['total'] = data['subtotal']  # If you have tax, add it here
+            result.append(data)
+        return result
+    except Exception as e:
+        logging.error(f"Error loading receipts from Google Sheets: {e}")
+        return []
+
 @app.route('/')
 def index():
     """Main page showing upload form and receipt history"""
-    receipts_data = load_receipts_data()
+    receipts_data = load_receipts_from_gsheet()
     refreshes_remaining = get_refreshes_remaining()
-    return render_template('index.html', receipts=receipts_data, refreshes_remaining=refreshes_remaining)
+    return render_template('index.html', receipts=receipts_data, refreshes_remaining=refreshes_remaining, powerbi_public_embed_url=POWERBI_PUBLIC_EMBED_URL)
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -387,6 +462,30 @@ def upload_file():
         # Save updated data
         if save_receipts_data(receipts_data):
             flash(f'Receipt processed successfully! Found {len(parsed_data["items"])} items.', 'success')
+            # Automatically upload to Google Sheet
+            try:
+                latest = receipts_data[-1]
+                items = latest.get('items', [])
+                receipt_date = latest.get('receipt_date', '')
+                receipt_id = str(uuid.uuid4())
+                rows = []
+                for item in items:
+                    rows.append([
+                        receipt_id,
+                        item.get('item_code', ''),
+                        item.get('item_name', ''),
+                        item.get('price', ''),
+                        item.get('discount', ''),
+                        item.get('final_price', ''),
+                        receipt_date
+                    ])
+                header = ["RECEIPT_ID", "ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE", "DATE"]
+                if [h.strip().upper() for h in sheet.row_values(1)] != header:
+                    sheet.update('A1', [header])
+                sheet.append_rows(rows, value_input_option='USER_ENTERED')
+                flash('Latest receipt uploaded to Google Sheet successfully!', 'success')
+            except Exception as e:
+                flash(f'Failed to upload to Google Sheet: {e}', 'error')
         else:
             flash('Receipt processed but failed to save data', 'warning')
         
@@ -417,7 +516,7 @@ def clear_data():
 
 @app.route('/upload_to_gsheet', methods=['POST'])
 def upload_to_gsheet():
-    """Upload the latest parsed receipt to Google Sheets"""
+    """Upload the latest parsed receipt to Google Sheets, with a unique RECEIPT_ID for each receipt."""
     try:
         receipts_data = load_receipts_data()
         if not receipts_data:
@@ -426,10 +525,12 @@ def upload_to_gsheet():
         latest = receipts_data[-1]
         items = latest.get('items', [])
         receipt_date = latest.get('receipt_date', '')
+        receipt_id = str(uuid.uuid4())
         # Prepare rows for Google Sheets
         rows = []
         for item in items:
             rows.append([
+                receipt_id,
                 item.get('item_code', ''),
                 item.get('item_name', ''),
                 item.get('price', ''),
@@ -437,6 +538,10 @@ def upload_to_gsheet():
                 item.get('final_price', ''),
                 receipt_date
             ])
+        # Ensure header is correct
+        header = ["RECEIPT_ID", "ITEM CODE", "ITEM NAME", "PRICE", "DISCOUNT", "FINAL PRICE", "DATE"]
+        if [h.strip().upper() for h in sheet.row_values(1)] != header:
+            sheet.update('A1', [header])
         # Append rows to the sheet
         sheet.append_rows(rows, value_input_option='USER_ENTERED')
         flash('Latest receipt uploaded to Google Sheet successfully!', 'success')
