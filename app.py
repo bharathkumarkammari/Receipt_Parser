@@ -9,11 +9,11 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import pytesseract
 from supabase import create_client, Client
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import requests
 from msal import ConfidentialClientApplication
 import gspread
-from google.oauth2.service_account import Credentials
+#from google.oauth2.service_account import Credentials
 import uuid
 
 # Load environment variables from .env (for local development)
