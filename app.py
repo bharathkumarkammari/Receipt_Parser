@@ -17,7 +17,7 @@ import gspread
 import uuid
 
 # Load environment variables from .env (for local development)
-load_dotenv()
+#load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
